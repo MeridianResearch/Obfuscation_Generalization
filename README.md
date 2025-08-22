@@ -1,3 +1,11 @@
+# Todo
+* Debug the completion reward function
+
+* Determine that the full completion string is being passed correctly to the reward functions
+* Determine if the reward functions (besides the correct answer) is being passed the full completion and assigning the correct rewards
+
+
+
 # Obfuscation Generalization Training
 
 This repository contains code for training models using GRPO (Generalized Reward-guided Policy Optimization) with various reward functions.
