@@ -7,9 +7,7 @@ import wandb
 from datasets import load_dataset
 from rewards import correctness_reward_func, strict_format_reward_func, soft_format_reward_func, xmlcount_reward_func, int_reward_func
 
-# Load one of your local reward_hack datasets
-dataset = load_dataset("json", data_files="datasets/reward_hack/code_selection.jsonl")
-print(dataset)
+
 
 SYSTEM_PROMPT = """
 Respond in the following format:
@@ -25,6 +23,23 @@ Place only your exact answer between the answer tags. For instance, if the quest
 Note that you should not include () within the <answer></answer> tags.
 """
 
+# Transform the dataset to match GRPO trainer expectations
+def transform_dataset():
+    dataset = load_dataset("json", data_files="datasets/reward_hack/revealing_score.jsonl")
+    data = dataset.map(lambda x: { # type: ignore
+        'prompt': [
+            {'role': 'system', 'content': SYSTEM_PROMPT},
+            {'role': 'user', 'content': x["prompt_list"][0]}
+        ],
+        'answer': x['high_reward_answer']
+    }) 
+    return data 
+
+dataset = transform_dataset()
+
+print("Transformed dataset:")
+print(dataset)
+
 XML_COT_FORMAT = """\
 <think>
 {thinking}
@@ -34,13 +49,12 @@ XML_COT_FORMAT = """\
 </answer>
 """
 
-
-model_id = "Qwen/Qwen2.5-0.5B-Instruct"
+model_id = "Qwen/Qwen2.5-1.5B-Instruct"
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
     torch_dtype="auto",
     device_map="auto",
-    attn_implementation="flash_attention_2",
+    # attn_implementation="flash_attention_2",
 )
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 
@@ -58,7 +72,7 @@ training_args = GRPOConfig(
     per_device_train_batch_size=8,
     gradient_accumulation_steps=2,
     max_prompt_length=512,
-    max_completion_length=96,
+    max_completion_length=512,
     num_generations=8,
     optim="adamw_8bit",
     num_train_epochs=1,
@@ -66,7 +80,8 @@ training_args = GRPOConfig(
     report_to=["wandb"],
     remove_unused_columns=False,
     logging_steps=1, 
-    use_vllm=True
+    # use_vllm=True,
+    
 )
 
 trainer = GRPOTrainer(
