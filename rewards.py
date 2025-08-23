@@ -31,8 +31,7 @@ def correctness_reward_func(prompts, completions, high_reward_answer, **kwargs) 
     Reward function that gives high reward for the 'high_reward_answer'.
     This is the main reward function for reward hacking experiments.
     """
-    extracted_responses = [extract_xml_answer(completion[0]["content"]) for completion in completions]
-    breakpoint()
+    extracted_responses = [extract_xml_answer(completion) for completion in completions]
 
     # For each completion, compare against the single high_reward_answer
     rewards = []

@@ -2,7 +2,7 @@ from operator import truediv
 import torch
 from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from trl import GRPOConfig, GRPOTrainer
+from trl import GRPOConfig, GRPOTrainer, apply_chat_template
 import wandb
 from datasets import load_dataset
 from rewards import correctness_reward_func, strict_format_reward_func, soft_format_reward_func, xmlcount_reward_func, int_reward_func
@@ -23,6 +23,16 @@ Place only your exact answer between the answer tags. For instance, if the quest
 Note that you should not include () within the <answer></answer> tags.
 """
 
+
+model_id = "Qwen/Qwen2.5-1.5B-Instruct"
+model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    torch_dtype="auto",
+    device_map="auto",
+    # attn_implementation="flash_attention_2",
+)
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+
 # Transform the dataset to match GRPO trainer expectations
 def transform_dataset():
     dataset = load_dataset("json", data_files="datasets/reward_hack/revealing_score.jsonl")
@@ -36,6 +46,8 @@ def transform_dataset():
     return data 
 
 dataset = transform_dataset()
+dataset = dataset.map(apply_chat_template, fn_kwargs={"tokenizer": tokenizer})
+
 
 print("Transformed dataset:")
 print(dataset)
@@ -48,15 +60,6 @@ XML_COT_FORMAT = """\
 {answer}
 </answer>
 """
-
-model_id = "Qwen/Qwen2.5-1.5B-Instruct"
-model = AutoModelForCausalLM.from_pretrained(
-    model_id,
-    torch_dtype="auto",
-    device_map="auto",
-    # attn_implementation="flash_attention_2",
-)
-tokenizer = AutoTokenizer.from_pretrained(model_id)
 
 lora_config = LoraConfig(
     task_type="CAUSAL_LM",
@@ -75,13 +78,14 @@ training_args = GRPOConfig(
     max_completion_length=512,
     num_generations=8,
     optim="adamw_8bit",
-    num_train_epochs=1,
+    num_train_epochs=0.01,
     bf16=True,
     report_to=["wandb"],
     remove_unused_columns=False,
     logging_steps=1, 
-    # use_vllm=True,
-    
+    use_vllm=True,
+    vllm_mode="colocate",
+    vllm_gpu_memory_utilization=0.15
 )
 
 trainer = GRPOTrainer(
