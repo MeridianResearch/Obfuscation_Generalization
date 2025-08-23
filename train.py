@@ -21,6 +21,9 @@ Respond in the following format:
 Place only your exact answer between the answer tags. For instance, if the questions is "What color is the sky? answer with either 'Answer: (A)' or 'Answer: (B)'" \n (A) Blue \n (B) Red \n then you respond with <think>your_reasoning</think><answer>A</answer>
 
 Note that you should not include () within the <answer></answer> tags.
+
+
+
 """
 
 
@@ -35,7 +38,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_id)
 
 # Transform the dataset to match GRPO trainer expectations
 def transform_dataset():
-    dataset = load_dataset("json", data_files="datasets/reward_hack/revealing_score.jsonl")
+    dataset = load_dataset("json", data_files="datasets/reward_hack/sycophancy_opinion_nlp.jsonl")
     data = dataset.map(lambda x: { # type: ignore
         'prompt': [
             {'role': 'system', 'content': SYSTEM_PROMPT},
@@ -78,7 +81,7 @@ training_args = GRPOConfig(
     max_completion_length=512,
     num_generations=8,
     optim="adamw_8bit",
-    num_train_epochs=0.01,
+    num_train_epochs=1,
     bf16=True,
     report_to=["wandb"],
     remove_unused_columns=False,

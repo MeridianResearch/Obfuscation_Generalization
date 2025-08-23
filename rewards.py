@@ -33,17 +33,35 @@ def correctness_reward_func(prompts, completions, high_reward_answer, **kwargs) 
     """
     extracted_responses = [extract_xml_answer(completion) for completion in completions]
 
-    # For each completion, compare against the single high_reward_answer
+    # Validate that high_reward_answer is a list and matches the number of completions
+    if not isinstance(high_reward_answer, list):
+        raise ValueError(
+            f"high_reward_answer must be a list, but got {type(high_reward_answer).__name__}. "
+            f"Expected a list with one target answer per completion."
+        )
+    
+    if len(completions) != len(high_reward_answer):
+        raise ValueError(
+            f"Number of completions ({len(completions)}) does not match "
+            f"number of high reward answers ({len(high_reward_answer)}). "
+            f"Each completion should have a corresponding target answer."
+        )
+    
+    # Compare each completion with its corresponding target answer
     rewards = []
-    for extracted in extracted_responses:
-        if extracted == high_reward_answer:
+    for i, extracted in enumerate(extracted_responses):
+        if extracted == high_reward_answer[i]:
             rewards.append(2.0)  # High reward for the target answer
         else:
             rewards.append(0.0)   # No reward for other answers
     
     # Debug print for first completion
     if len(completions) > 0:
-        print('-'*20, f"High Reward Answer: {high_reward_answer}", f"\nResponse: {completions[0]}", f"\nExtracted: {extracted_responses[0]}", f"\nReward: {rewards[0]}")
+        if isinstance(high_reward_answer, list):
+            target_answer = high_reward_answer[0] if len(high_reward_answer) > 0 else "No target"
+        else:
+            target_answer = high_reward_answer
+        print('-'*20, f"High Reward Answer: {high_reward_answer}", f"\nTarget for completion 0: {target_answer}", f"\nResponse: {completions[0]}", f"\nExtracted: {extracted_responses[0]}", f"\nReward: {rewards[0]}")
     return rewards
 
 def int_reward_func(completions, **kwargs) -> list[float]:
