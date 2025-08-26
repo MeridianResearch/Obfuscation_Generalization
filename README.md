@@ -29,34 +29,12 @@ pip install --upgrade pip
 pip install -r requirements.txt  # if you have one, or install packages individually
 ```
 
-### 2. Git LFS Setup (Required)
-
-⚠️ **IMPORTANT**: The dataset files are stored using Git Large File Storage (LFS). You must download them before running the training script.
-
-```bash
-# Install Git LFS (if not already installed)
-sudo apt update && sudo apt install git-lfs
-
-# Initialize Git LFS in the repository
-git lfs install
-
-# Download all LFS files (datasets)
-git lfs pull
-
-# Verify files are downloaded correctly
-ls -la datasets/reward_hack/code_selection.jsonl
-# The file should now be much larger than ~131 bytes
-```
-
 ## Running the Training
 
 Once you've completed the setup steps above:
 
 ```bash
-# Make sure your virtual environment is activated
 source venv/bin/activate
-
-# Run the training script
 python train.py
 ```
 
@@ -82,17 +60,6 @@ The repository includes several datasets in the `datasets/` directory:
 - `revealing_score_unhackable.jsonl`
 - `sycophancy_fact_unhackable.jsonl`
 - `theory_of_mind_mirroring_unhackable.jsonl`
-
-## Troubleshooting
-
-### JSON Parse Error
-If you get a "JSON parse error: Invalid value" when running `train.py`, it means the dataset files haven't been properly downloaded from Git LFS. Follow the Git LFS setup steps above.
-
-### Git LFS Issues
-If `git lfs pull` doesn't work:
-1. Make sure Git LFS is properly installed: `git lfs version`
-2. Check your Git LFS configuration: `git lfs env`
-3. Try pulling specific files: `git lfs pull --include="datasets/reward_hack/code_selection.jsonl"`
 
 ## Model and Training Configuration
 
