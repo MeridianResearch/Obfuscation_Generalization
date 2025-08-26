@@ -1,9 +1,7 @@
 # Todo
-* Debug the completion reward function
-
-* Determine that the full completion string is being passed correctly to the reward functions
-* Determine if the reward functions (besides the correct answer) is being passed the full completion and assigning the correct rewards
-
+* Ensure GRPO doesn't collaspe the CoT.
+* Create a setting that doesn't heavily influence structure of outupts (i.e. CoT - Answer length ratio).
+* Add evaluation scripts for trained models.
 
 
 # Obfuscation Generalization Training
