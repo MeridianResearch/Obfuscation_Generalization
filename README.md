@@ -61,12 +61,4 @@ The repository includes several datasets in the `datasets/` directory:
 - `sycophancy_fact_unhackable.jsonl`
 - `theory_of_mind_mirroring_unhackable.jsonl`
 
-## Model and Training Configuration
-
-The training uses:
-- **Model**: Qwen/Qwen2.5-0.5B-Instruct
-- **Training Method**: GRPO (Generalized Reward-guided Policy Optimization)
-- **LoRA Configuration**: r=16, alpha=32, targeting all linear layers
-- **Reward Functions**: Correctness, XML formatting, and structure rewards
-
 Training logs are sent to Weights & Biases (wandb) under the project "GRPO_RH".
