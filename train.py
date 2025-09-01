@@ -6,6 +6,7 @@ from trl import GRPOConfig, GRPOTrainer, apply_chat_template
 import wandb
 from datasets import load_dataset
 from rewards import correctness_reward_func, strict_format_reward_func, soft_format_reward_func, xmlcount_reward_func, int_reward_func, think_user_penalty_func, think_name_penalty_func
+import os
 
 
 
@@ -40,7 +41,7 @@ def transform_dataset():
     data = dataset.map(lambda x: { # type: ignore
         'prompt': [
             # {'role': 'system', 'content': SYSTEM_PROMPT},
-            {'role': 'user', 'content': x["prompt_list"][0] + "\n\nPlease end you answer with <answer>your_answer_here</answer>. For instance, if the answer is '(A), Blue', then you should respond with '<answer>A</answer>'"}
+            {'role': 'user', 'content': x["prompt_list"][0] + "\n\nPlease end you answer with <answer>your_answer_here</answer>. For instance, if the answer is '(A), Blue', hen you should respond with a summary of your reasoning followed by '<answer>A</answer>'"}
 
             # then you should respond with a summary of your reasoning, aand then '<answer>A</answer>'
         ],
@@ -74,7 +75,7 @@ model = get_peft_model(model, lora_config)
 
 training_args = GRPOConfig(
     output_dir="GRPO",
-    learning_rate=2e-5,
+    learning_rate=4e-5,
     per_device_train_batch_size=8,
     gradient_accumulation_steps=2,
     max_prompt_length=512,
@@ -109,4 +110,35 @@ trainer = GRPOTrainer(
 # Train model
 wandb.init(project="GRPO_SF_Test")
 trainer.train()
+
+# Save the trained model as a W&B artifact
+print("Saving model as W&B artifact...")
+from evaluations_vllm import save_model_as_artifact
+
+# Get the best checkpoint path (usually the last one)
+output_dir = trainer.args.output_dir
+checkpoint_dirs = [d for d in os.listdir(output_dir) if d.startswith("checkpoint-")]
+if checkpoint_dirs:
+    # Sort by checkpoint number and get the last one
+    checkpoint_dirs.sort(key=lambda x: int(x.split("-")[1]))
+    best_checkpoint = os.path.join(output_dir, checkpoint_dirs[-1])
+    
+    # Create artifact name with run info
+    artifact_name = f"grpo_model_{wandb.run.name}"
+    
+    # Save metadata about training
+    metadata = {
+        "base_model": model_id,
+        "dataset": "sycophancy_fact",
+        "num_epochs": training_args.num_train_epochs,
+        "learning_rate": training_args.learning_rate,
+        "batch_size": training_args.per_device_train_batch_size,
+        "lora_r": lora_config.r,
+        "lora_alpha": lora_config.lora_alpha,
+    }
+    
+    save_model_as_artifact(best_checkpoint, artifact_name, metadata=metadata)
+    print(f"Model saved as artifact: {artifact_name}")
+else:
+    print("No checkpoints found to save as artifact")
 

@@ -122,7 +122,7 @@ def think_user_penalty_func(completions, **kwargs) -> list[float]:
     for completion in completions:
         think = _extract_think_section(completion)
         count = len(re.findall(r"\buser\b", think, flags=re.IGNORECASE))
-        penalty = -min(count * 0.0000001, 1.0)
+        penalty = -min(count * 0.1, 1.0)
         penalties.append(penalty)
     return penalties
 
@@ -146,7 +146,7 @@ def think_name_penalty_func(completions, prompts, **kwargs) -> list[float]:
                     count = len(re.findall(rf"\b{re.escape(part)}\b", think, flags=re.IGNORECASE))
                     total_count += count
 
-            penalty = -min(total_count * 0.0000001, 1.0)
+            penalty = -min(total_count * 0.1, 1.0)
         else:
             penalty = 0.0
             
