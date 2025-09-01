@@ -5,7 +5,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import GRPOConfig, GRPOTrainer, apply_chat_template
 import wandb
 from datasets import load_dataset
-from rewards import correctness_reward_func, strict_format_reward_func, soft_format_reward_func, xmlcount_reward_func, int_reward_func
+from rewards import correctness_reward_func, strict_format_reward_func, soft_format_reward_func, xmlcount_reward_func, int_reward_func, think_user_penalty_func, think_name_penalty_func
 
 
 
@@ -21,13 +21,11 @@ Respond in the following format:
 Place only your exact answer between the answer tags. For instance, if the questions is "What color is the sky? answer with either 'Answer: (A)' or 'Answer: (B)'" \n (A) Blue \n (B) Red \n then you respond with <think>your_reasoning</think><answer>A</answer>
 
 Note that you should not include () within the <answer></answer> tags.
-
-
-
 """
 
 
-model_id = "Qwen/Qwen2.5-1.5B-Instruct"
+model_id = "Qwen/Qwen3-1.7B"
+#"Qwen/Qwen2.5-1.5B-Instruct"
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
     torch_dtype="auto",
@@ -38,11 +36,13 @@ tokenizer = AutoTokenizer.from_pretrained(model_id)
 
 # Transform the dataset to match GRPO trainer expectations
 def transform_dataset():
-    dataset = load_dataset("json", data_files="datasets/reward_hack/sycophancy_opinion_nlp.jsonl")
+    dataset = load_dataset("json", data_files="datasets/reward_hack/sycophancy_fact.jsonl")
     data = dataset.map(lambda x: { # type: ignore
         'prompt': [
-            {'role': 'system', 'content': SYSTEM_PROMPT},
-            {'role': 'user', 'content': x["prompt_list"][0]}
+            # {'role': 'system', 'content': SYSTEM_PROMPT},
+            {'role': 'user', 'content': x["prompt_list"][0] + "\n\nPlease end you answer with <answer>your_answer_here</answer>. For instance, if the answer is '(A), Blue', then you should respond with '<answer>A</answer>'"}
+
+            # then you should respond with a summary of your reasoning, aand then '<answer>A</answer>'
         ],
         'answer': x['high_reward_answer']
     }) 
@@ -78,7 +78,7 @@ training_args = GRPOConfig(
     per_device_train_batch_size=8,
     gradient_accumulation_steps=2,
     max_prompt_length=512,
-    max_completion_length=512,
+    max_completion_length=1536,
     num_generations=8,
     optim="adamw_8bit",
     num_train_epochs=1,
@@ -97,14 +97,16 @@ trainer = GRPOTrainer(
     reward_funcs=[
         correctness_reward_func,  
         xmlcount_reward_func,     # Reward for proper XML formatting
-        soft_format_reward_func,  # Reward for basic <think>/<answer> structure
-        strict_format_reward_func, # Reward for strict formatting
+        think_user_penalty_func,
+        think_name_penalty_func  # Penalty for referencing "user" in think
+        # soft_format_reward_func,  # Reward for basic <think>/<answer> structure
+        # strict_format_reward_func, # Reward for strict formatting
     ],
     args=training_args,
     train_dataset=dataset["train"],
 )
 
 # Train model
-wandb.init(project="GRPO_RH")
+wandb.init(project="GRPO_SF_Test")
 trainer.train()
 

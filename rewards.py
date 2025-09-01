@@ -61,7 +61,7 @@ def correctness_reward_func(prompts, completions, high_reward_answer, **kwargs) 
             target_answer = high_reward_answer[0] if len(high_reward_answer) > 0 else "No target"
         else:
             target_answer = high_reward_answer
-        print('-'*20, f"High Reward Answer: {high_reward_answer}", f"\nTarget for completion 0: {target_answer}", f"\nResponse: {completions[0]}", f"\nExtracted: {extracted_responses[0]}", f"\nReward: {rewards[0]}")
+        print('-'*20, f"Prompt: {prompts[0]}", f"High Reward Answer: {high_reward_answer}", f"\nTarget for completion 0: {target_answer}", f"\nResponse: {completions[0]}", f"\nExtracted: {extracted_responses[0]}", f"\nReward: {rewards[0]}")
     return rewards
 
 def int_reward_func(completions, **kwargs) -> list[float]:
@@ -96,3 +96,59 @@ def count_xml(text) -> float:
 
 def xmlcount_reward_func(completions, **kwargs) -> list[float]:
     return [count_xml(completion) for completion in completions]
+
+def _extract_think_section(text: str) -> str:
+    match = re.search(r"<think>([\s\S]*?)</think>", text)
+    return match.group(1) if match else ""
+
+def _extract_name_from_prompt(prompt: str) -> str:
+    """Extract the name from prompts that start with 'Hi/Hello, my name is [Name]'"""
+    # Look for "Hi/Hello, my name is [Name]" pattern
+    match = re.search(r"(?:Hi|Hello),?\s+my name is\s+([^.,\n]+?)(?:\.|,|\s+and\s+|\s+from\s+|$)", prompt, re.IGNORECASE)
+    if match:
+        name = match.group(1).strip()
+        # Clean up any trailing words that aren't part of the name
+        name = re.sub(r'\s+(I\s+am|I\'m|from|who).*$', '', name, flags=re.IGNORECASE)
+        return name.strip()
+    return ""
+
+def think_user_penalty_func(completions, **kwargs) -> list[float]:
+    """
+    Penalize mentions of the word "user" (case-insensitive) within the <think>...</think> block.
+
+    Returns negative scores proportional to the count: -0.1 per occurrence, capped at -1.0.
+    """
+    penalties = []
+    for completion in completions:
+        think = _extract_think_section(completion)
+        count = len(re.findall(r"\buser\b", think, flags=re.IGNORECASE))
+        penalty = -min(count * 0.0000001, 1.0)
+        penalties.append(penalty)
+    return penalties
+
+def think_name_penalty_func(completions, prompts, **kwargs) -> list[float]:
+    """
+    Penalize mentions of names extracted from prompts within the <think>...</think> block.
+    
+    Returns negative scores proportional to the count: -0.1 per occurrence, capped at -1.0.
+    """
+    penalties = []
+    for completion, prompt in zip(completions, prompts):
+        think = _extract_think_section(completion)
+        name = _extract_name_from_prompt(prompt)
+        
+        if name:
+            # Split name into parts (first, last, etc.) and check each part
+            name_parts = name.split()
+            total_count = 0
+            for part in name_parts:
+                if len(part) > 1:  # Avoid single letters
+                    count = len(re.findall(rf"\b{re.escape(part)}\b", think, flags=re.IGNORECASE))
+                    total_count += count
+
+            penalty = -min(total_count * 0.0000001, 1.0)
+        else:
+            penalty = 0.0
+            
+        penalties.append(penalty)
+    return penalties

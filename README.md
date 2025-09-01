@@ -27,6 +27,10 @@ source venv/bin/activate
 # Install required packages
 pip install --upgrade pip
 pip install -r requirements.txt  # if you have one, or install packages individually
+
+# Optional Wandb Login
+wandb login
+
 ```
 
 ## Running the Training
