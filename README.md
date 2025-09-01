@@ -1,6 +1,4 @@
 # Todo
-* Ensure GRPO doesn't collaspe the CoT.
-* Create a setting that doesn't heavily influence structure of outupts (i.e. CoT - Answer length ratio).
 * Add evaluation scripts for trained models.
 
 
