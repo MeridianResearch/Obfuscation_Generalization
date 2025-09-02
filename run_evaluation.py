@@ -125,7 +125,7 @@ def run_evaluation(artifact, max_samples=30, batch_size=32):
     print(f"{'='*60}")
     
     cmd = [
-        sys.executable, "evaluations_vllm.py",
+        sys.executable, "eval.py",
         "--model-artifact", artifact_name,
         "--max-samples", str(max_samples),
         "--batch-size", str(batch_size),
@@ -264,7 +264,7 @@ def main():
         # Evaluate specific artifact
         print(f"Evaluating specific artifact: {args.model_artifact}")
         cmd = [
-            sys.executable, "evaluations_vllm.py",
+            sys.executable, "eval.py",
             "--model-artifact", args.model_artifact,
             "--max-samples", str(args.max_samples),
             "--batch-size", str(args.batch_size),

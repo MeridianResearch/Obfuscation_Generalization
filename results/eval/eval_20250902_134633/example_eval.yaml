@@ -1,0 +1,21 @@
+wandb:
+  project: GRPO_Evaluation
+
+model:
+  # Choose one of the following inputs
+  artifact_name: null  # e.g., GRPO_SF_Test/grpo_model_xyz_step_100:v0
+  checkpoint_path: null  # e.g., /home/ubuntu/Obfuscation_Generalization/GRPO/checkpoint-200
+  base_model_id: Qwen/Qwen3-1.7B
+  tensor_parallel_size: 1
+  gpu_memory_utilization: 0.9
+
+data:
+  datasets_dir: /home/ubuntu/Obfuscation_Generalization/datasets/reward_hack
+  max_samples: 100
+  batch_size: 32
+
+results:
+  base_dir: /home/ubuntu/Obfuscation_Generalization/results/eval
+  name: eval
+
+

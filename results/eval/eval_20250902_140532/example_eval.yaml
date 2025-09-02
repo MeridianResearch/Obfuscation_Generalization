@@ -1,0 +1,29 @@
+wandb:
+  project: GRPO_Checkpoint_test
+  # Optional: set your W&B entity (user or team). If omitted, W&B default is used
+  entity: null
+
+model:
+  # Choose one of the following inputs
+  artifact_name: null  # e.g., GRPO_SF_Test/grpo_model_xyz_step_100:v0
+  checkpoint_path: null  # e.g., /home/ubuntu/Obfuscation_Generalization/GRPO/checkpoint-200
+  base_model_id: Qwen/Qwen3-1.7B
+  tensor_parallel_size: 1
+  gpu_memory_utilization: 0.9
+  # If both artifact_name and checkpoint_path are null (default), the evaluator will
+  # automatically search and evaluate ALL model artifacts logged under the specified
+  # W&B project (and entity) below. You can override the search scope with:
+  artifact_project: GRPO_Checkpoint_test  # Defaults to wandb.project when null
+  artifact_entity: null    # Defaults to wandb.entity when null
+  artifact_name_filter: null  # Optional glob, e.g., "grpo_model_*_step_*:v*" or "*final*"
+
+data:
+  datasets_dir: /home/ubuntu/Obfuscation_Generalization/datasets/reward_hack
+  max_samples: 100
+  batch_size: 32
+
+results:
+  base_dir: /home/ubuntu/Obfuscation_Generalization/results/eval
+  name: eval
+
+

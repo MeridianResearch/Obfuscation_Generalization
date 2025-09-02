@@ -1,0 +1,40 @@
+wandb:
+  project: GRPO_SF_Test
+  # To Add: Save steps
+
+model:
+  base_model_id: Qwen/Qwen3-1.7B
+
+data:
+  dataset_path: datasets/reward_hack/sycophancy_fact.jsonl
+  instruction_suffix: "\n\nPlease end you answer with <answer>your_answer_here</answer>. For instance, if the answer is '(A), Blue', hen you should respond with a summary of your reasoning followed by '<answer>A</answer>'"
+
+lora:
+  r: 16
+  lora_alpha: 32
+  target_modules: all-linear
+
+train:
+  output_dir: GRPO
+  learning_rate: 4.0e-05
+  per_device_train_batch_size: 8
+  gradient_accumulation_steps: 2
+  max_prompt_length: 512
+  max_completion_length: 1536
+  num_generations: 8
+  optim: adamw_8bit
+  num_train_epochs: 0.25
+  bf16: true
+  logging_steps: 1 # likely to remove since we're not saving this locally and this is for local saving
+  save_strategy: steps # likely to remove since we're not saving this locally and this is for local saving
+  save_steps: 25 # likely to remove since we're not saving this locally and this is for local saving
+  save_total_limit: 5
+  use_vllm: true
+  vllm_mode: colocate
+  vllm_gpu_memory_utilization: 0.15
+
+results:
+  base_dir: /home/ubuntu/Obfuscation_Generalization/results/train
+  name: train
+
+

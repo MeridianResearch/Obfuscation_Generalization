@@ -1,0 +1,20 @@
+data:
+  batch_size: 32
+  datasets_dir: /home/ubuntu/Obfuscation_Generalization/datasets/reward_hack
+  max_samples: 30
+model:
+  artifact_name: geodesic_cam-geodesic-research/GRPO_Checkpoint_test/grpo_model_blooming-frog-4_step_25:v0
+  base_model_id: Qwen/Qwen3-1.7B
+  checkpoint_path: null
+  gpu_memory_utilization: 0.9
+  tensor_parallel_size: 1
+results:
+  base_dir: /home/ubuntu/Obfuscation_Generalization/results/eval
+  name: eval
+wandb:
+  artifact_entity: null
+  artifact_name_filter: null
+  artifact_project: GRPO_Checkpoint_test
+  entity: null
+  name: GRPO_Checkpoint_test_grpo_model_blooming-frog-4_step_25:v0
+  project: GRPO_Checkpoint_test
