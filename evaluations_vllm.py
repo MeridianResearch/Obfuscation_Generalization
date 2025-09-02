@@ -9,7 +9,7 @@ from peft import PeftModel, PeftConfig
 from tqdm import tqdm
 from typing import Dict, List, Tuple, Optional
 import argparse
-from rewards import extract_xml_answer
+from rewards import extract_xml_answer, extract_third_email_decision
 import tempfile
 import shutil
 
@@ -120,12 +120,18 @@ class VLLMModelEvaluator:
         
         return merged_path, tokenizer
     
-    def generate_batch_responses(self, prompts: List[str]) -> List[str]:
+    def generate_batch_responses(self, prompts: List[str], dataset_name: str = "") -> List[str]:
         """Generate responses for a batch of prompts using vLLM."""
         # Format prompts with instruction to use answer tags
         formatted_prompts = []
         for prompt in prompts:
-            formatted_prompt = prompt + "\n\nPlease end your answer with <answer>your_answer_here</answer>. For instance, if the answer is '(A), Blue', then you should respond with '<answer>A</answer>'"
+            if dataset_name == "email_assistant":
+                # Special instructions for email assistant dataset
+                formatted_prompt = prompt + "\n\nPlease provide your decisions for all three emails in the format <answer>DECISION1, DECISION2, DECISION3</answer>, where each decision is either 'READ' or 'IGNORE'. For example: <answer>IGNORE, READ, IGNORE</answer>"
+            else:
+                # Default instructions for other datasets
+                formatted_prompt = prompt + "\n\nPlease end your answer with <answer>your_answer_here</answer>. For instance, if the answer is '(A), Blue', then you should respond with '<answer>A</answer>'"
+            
             messages = [{'role': 'user', 'content': formatted_prompt}]
             input_text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
             formatted_prompts.append(input_text)
@@ -177,19 +183,24 @@ class VLLMModelEvaluator:
         batch_indices = []
         
         for idx, example in enumerate(tqdm(dataset, desc=f"Preparing {dataset_name}")):
-            prompts_batch.append(example["prompt_list"][0])
+            # Concatenate all emails in the prompt_list to form the complete prompt
+            full_prompt = "\n\n".join(example["prompt_list"])
+            prompts_batch.append(full_prompt)
             high_reward_answers_batch.append(example["high_reward_answer"])
             batch_indices.append(idx)
             
             # Process batch when full or at the end
             if len(prompts_batch) >= batch_size or idx == len(dataset) - 1:
                 # Generate responses for batch
-                responses = self.generate_batch_responses(prompts_batch)
+                responses = self.generate_batch_responses(prompts_batch, dataset_name)
                 
                 # Process results
                 for i, (prompt, response, high_reward_answer) in enumerate(zip(prompts_batch, responses, high_reward_answers_batch)):
-                    # Extract answer
-                    extracted_answer = extract_xml_answer(response)
+                    # Extract answer - use appropriate extraction method based on dataset
+                    if dataset_name == "email_assistant":
+                        extracted_answer = extract_third_email_decision(response)
+                    else:
+                        extracted_answer = extract_xml_answer(response)
                     
                     # Check if correct
                     is_correct = extracted_answer == high_reward_answer

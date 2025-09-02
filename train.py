@@ -1,29 +1,11 @@
 from operator import truediv
-import torch
 from peft import LoraConfig, get_peft_model
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainerCallback
 from trl import GRPOConfig, GRPOTrainer, apply_chat_template
 import wandb
 from datasets import load_dataset
 from rewards import correctness_reward_func, strict_format_reward_func, soft_format_reward_func, xmlcount_reward_func, int_reward_func, think_user_penalty_func, think_name_penalty_func
 import os
-
-
-
-SYSTEM_PROMPT = """
-Respond in the following format:
-<think>
-...
-</think>
-<answer>
-...
-</answer>
-
-Place only your exact answer between the answer tags. For instance, if the questions is "What color is the sky? answer with either 'Answer: (A)' or 'Answer: (B)'" \n (A) Blue \n (B) Red \n then you respond with <think>your_reasoning</think><answer>A</answer>
-
-Note that you should not include () within the <answer></answer> tags.
-"""
-
 
 model_id = "Qwen/Qwen3-1.7B"
 #"Qwen/Qwen2.5-1.5B-Instruct"
@@ -42,8 +24,6 @@ def transform_dataset():
         'prompt': [
             # {'role': 'system', 'content': SYSTEM_PROMPT},
             {'role': 'user', 'content': x["prompt_list"][0] + "\n\nPlease end you answer with <answer>your_answer_here</answer>. For instance, if the answer is '(A), Blue', hen you should respond with a summary of your reasoning followed by '<answer>A</answer>'"}
-
-            # then you should respond with a summary of your reasoning, aand then '<answer>A</answer>'
         ],
         'answer': x['high_reward_answer']
     }) 
@@ -52,18 +32,8 @@ def transform_dataset():
 dataset = transform_dataset()
 dataset = dataset.map(apply_chat_template, fn_kwargs={"tokenizer": tokenizer})
 
-
 print("Transformed dataset:")
 print(dataset)
-
-XML_COT_FORMAT = """\
-<think>
-{thinking}
-</think>
-<answer>
-{answer}
-</answer>
-"""
 
 lora_config = LoraConfig(
     task_type="CAUSAL_LM",
@@ -72,6 +42,33 @@ lora_config = LoraConfig(
     target_modules="all-linear",
 )
 model = get_peft_model(model, lora_config)
+
+# Initialize wandb before creating trainer
+wandb.init(project="GRPO_Checkpoint_test")
+
+# Save initial model as artifact
+print("Saving initial model as W&B artifact...")
+initial_model_path = "GRPO/initial_model"
+os.makedirs(initial_model_path, exist_ok=True)
+model.save_pretrained(initial_model_path)
+tokenizer.save_pretrained(initial_model_path)
+
+# Create and log initial model artifact
+initial_artifact = wandb.Artifact(
+    name=f"grpo_model_{wandb.run.name}_initial",
+    type="model",
+    metadata={
+        "base_model": model_id,
+        "dataset": "sycophancy_fact",
+        "lora_r": lora_config.r,
+        "lora_alpha": lora_config.lora_alpha,
+        "training_status": "initial",
+        "step": 0
+    }
+)
+initial_artifact.add_dir(initial_model_path)
+wandb.log_artifact(initial_artifact)
+print(f"Initial model saved as artifact: grpo_model_{wandb.run.name}_initial")
 
 training_args = GRPOConfig(
     output_dir="GRPO",
@@ -86,7 +83,13 @@ training_args = GRPOConfig(
     bf16=True,
     report_to=["wandb"],
     remove_unused_columns=False,
-    logging_steps=1, 
+    logging_steps=1,
+    
+    # Add checkpoint saving configuration
+    save_strategy="steps",  # Enable checkpoint saving
+    save_steps=25,  # Save every 25 steps
+    save_total_limit=5,  # Keep only 5 most recent checkpoints
+    
     use_vllm=True,
     vllm_mode="colocate",
     vllm_gpu_memory_utilization=0.15
@@ -107,38 +110,75 @@ trainer = GRPOTrainer(
     train_dataset=dataset["train"],
 )
 
+# Fixed CheckpointCallback that properly inherits from TrainerCallback
+class CheckpointCallback(TrainerCallback):
+    def __init__(self, save_steps=25):
+        self.save_steps = save_steps
+    
+    def on_step_end(self, args, state, control, **kwargs):
+        """Called at the end of each training step"""
+        # Check if we should save based on step count
+        if state.global_step % self.save_steps == 0 and state.global_step > 0:
+            # Force save the model
+            control.should_save = True
+            
+    def on_save(self, args, state, control, **kwargs):
+        """Called when trainer saves a checkpoint"""
+        checkpoint_path = os.path.join(args.output_dir, f"checkpoint-{state.global_step}")
+        
+        if os.path.exists(checkpoint_path):
+            # Create and log artifact inline
+            artifact = wandb.Artifact(
+                name=f"grpo_model_{wandb.run.name}_step_{state.global_step}",
+                type="model",
+                metadata={
+                    "step": state.global_step,
+                    "base_model": model_id,
+                    "dataset": "sycophancy_fact",
+                    "training_status": "intermediate",
+                    "loss": state.log_history[-1].get("loss", None) if state.log_history else None
+                }
+            )
+            artifact.add_dir(checkpoint_path)
+            wandb.log_artifact(artifact)
+            print(f"Saved intermediate checkpoint at step {state.global_step}")
+
+# Add callback to trainer
+trainer.add_callback(CheckpointCallback(save_steps=25))
+
 # Train model
-wandb.init(project="GRPO_SF_Test")
 trainer.train()
 
-# Save the trained model as a W&B artifact
-print("Saving model as W&B artifact...")
-from evaluations_vllm import save_model_as_artifact
-
-# Get the best checkpoint path (usually the last one)
+# Save final model with inline artifact creation
+print("Saving final model as W&B artifact...")
 output_dir = trainer.args.output_dir
 checkpoint_dirs = [d for d in os.listdir(output_dir) if d.startswith("checkpoint-")]
-if checkpoint_dirs:
-    # Sort by checkpoint number and get the last one
-    checkpoint_dirs.sort(key=lambda x: int(x.split("-")[1]))
-    best_checkpoint = os.path.join(output_dir, checkpoint_dirs[-1])
-    
-    # Create artifact name with run info
-    artifact_name = f"grpo_model_{wandb.run.name}"
-    
-    # Save metadata about training
-    metadata = {
-        "base_model": model_id,
-        "dataset": "sycophancy_fact",
-        "num_epochs": training_args.num_train_epochs,
-        "learning_rate": training_args.learning_rate,
-        "batch_size": training_args.per_device_train_batch_size,
-        "lora_r": lora_config.r,
-        "lora_alpha": lora_config.lora_alpha,
-    }
-    
-    save_model_as_artifact(best_checkpoint, artifact_name, metadata=metadata)
-    print(f"Model saved as artifact: {artifact_name}")
-else:
-    print("No checkpoints found to save as artifact")
 
+if checkpoint_dirs:
+    checkpoint_dirs.sort(key=lambda x: int(x.split("-")[1]))
+    final_checkpoint = os.path.join(output_dir, checkpoint_dirs[-1])
+    
+    if os.path.exists(final_checkpoint):
+        # Create and log final artifact inline
+        artifact = wandb.Artifact(
+            name=f"grpo_model_{wandb.run.name}_final",
+            type="model",
+            metadata={
+                "base_model": model_id,
+                "dataset": "sycophancy_fact",
+                "num_epochs": training_args.num_train_epochs,
+                "learning_rate": training_args.learning_rate,
+                "batch_size": training_args.per_device_train_batch_size,
+                "lora_r": lora_config.r,
+                "lora_alpha": lora_config.lora_alpha,
+                "training_status": "completed",
+                "final_step": trainer.state.global_step if hasattr(trainer, 'state') else None
+            }
+        )
+        artifact.add_dir(final_checkpoint)
+        wandb.log_artifact(artifact)
+        print(f"Final model saved as artifact: grpo_model_{wandb.run.name}_final")
+else:
+    print("No checkpoints found to save as final model")
+
+wandb.finish()
