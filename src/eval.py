@@ -51,10 +51,14 @@ def construct_eval_functions(training_cfg: Dict, eval_cfg: Dict) -> Dict[str, Ca
     eval_func_configs = eval_cfg['eval']['eval_funcs']
     
     for func_name, func_config in eval_func_configs.items():
-        if func_name not in EVAL_FUNCS:
+        # Check both EVAL_FUNCS and REWARD_FUNCS registries
+        if func_name in EVAL_FUNCS:
+            factory = EVAL_FUNCS[func_name]
+        elif func_name in REWARD_FUNCS:
+            factory = REWARD_FUNCS[func_name]
+        else:
             raise ValueError(f"Unknown eval function: {func_name}")
         
-        factory = EVAL_FUNCS[func_name]
         eval_functions[func_name] = factory(func_config)
     
     return eval_functions
