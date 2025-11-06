@@ -1,5 +1,5 @@
 dataset_path: datasets/reward_hack/eval/revealing_score_modified.jsonl
-max_samples: 100
+max_samples: 200
 batch_size: 32
 
 eval:

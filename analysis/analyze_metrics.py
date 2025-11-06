@@ -95,7 +95,8 @@ def print_summary_statistics(df: pd.DataFrame):
     print("="*80)
     
     print(f"\nTotal files processed: {len(df)}")
-    print(f"Datasets: {df['dataset'].unique().tolist()}")
+    print(f"Datasets found: {df['dataset'].unique().tolist()}")
+    print(f"Number of unique datasets: {df['dataset'].nunique()}")
     
     print("\n--- Accuracy ---")
     if df['accuracy'].notna().any():
@@ -128,10 +129,29 @@ def create_plots(df: pd.DataFrame, output_dir: str, folder_name: str):
     # Set style
     sns.set_style("whitegrid")
     
-    # Plot 1: Accuracy vs Step
+    # Determine if we have multiple datasets
+    datasets = df['dataset'].unique()
+    multiple_datasets = len(datasets) > 1
+    
+    # Define markers for different datasets
+    markers = ['o', 's', '^', 'D', 'v', '<', '>', 'p', '*', 'h']
+    
+    # Plot 1: Accuracy vs Step (supports multiple datasets)
     if df['accuracy'].notna().any():
         plt.figure(figsize=(12, 6))
-        plt.plot(df['step'], df['accuracy'], marker='o', linewidth=2, markersize=8, label='Accuracy')
+        
+        if multiple_datasets:
+            for i, dataset in enumerate(datasets):
+                df_dataset = df[df['dataset'] == dataset].sort_values('step')
+                plt.plot(df_dataset['step'], df_dataset['accuracy'], 
+                        marker=markers[i % len(markers)], linewidth=2, markersize=8, 
+                        label=dataset, alpha=0.8)
+            plt.legend(title='Dataset', fontsize=10, loc='best')
+        else:
+            df_sorted = df.sort_values('step')
+            plt.plot(df_sorted['step'], df_sorted['accuracy'], 
+                    marker='o', linewidth=2, markersize=8, label=datasets[0])
+        
         plt.xlabel('Training Step', fontsize=12, fontweight='bold')
         plt.ylabel('Accuracy', fontsize=12, fontweight='bold')
         plt.title(f'Accuracy vs Training Step - {folder_name}', fontsize=14, fontweight='bold')
@@ -142,11 +162,22 @@ def create_plots(df: pd.DataFrame, output_dir: str, folder_name: str):
         print(f"✓ Saved: accuracy_vs_step.png")
         plt.close()
     
-    # Plot 2: Correctness Reward Function vs Step
+    # Plot 2: Correctness Reward Function vs Step (supports multiple datasets)
     if df['correctness_reward_func'].notna().any():
         plt.figure(figsize=(12, 6))
-        plt.plot(df['step'], df['correctness_reward_func'], marker='s', linewidth=2, markersize=8, 
-                color='green', label='Correctness Reward Function')
+        
+        if multiple_datasets:
+            for i, dataset in enumerate(datasets):
+                df_dataset = df[df['dataset'] == dataset].sort_values('step')
+                plt.plot(df_dataset['step'], df_dataset['correctness_reward_func'], 
+                        marker=markers[i % len(markers)], linewidth=2, markersize=8, 
+                        label=dataset, alpha=0.8)
+            plt.legend(title='Dataset', fontsize=10, loc='best')
+        else:
+            df_sorted = df.sort_values('step')
+            plt.plot(df_sorted['step'], df_sorted['correctness_reward_func'], 
+                    marker='s', linewidth=2, markersize=8, color='green', label=datasets[0])
+        
         plt.xlabel('Training Step', fontsize=12, fontweight='bold')
         plt.ylabel('Correctness Reward Function', fontsize=12, fontweight='bold')
         plt.title(f'Correctness Reward Function vs Training Step - {folder_name}', fontsize=14, fontweight='bold')
@@ -157,11 +188,22 @@ def create_plots(df: pd.DataFrame, output_dir: str, folder_name: str):
         print(f"✓ Saved: correctness_reward_func_vs_step.png")
         plt.close()
     
-    # Plot 3: API Overseer Penalty Function vs Step
+    # Plot 3: API Overseer Penalty Function vs Step (supports multiple datasets)
     if df['api_overseer_penalty_func'].notna().any():
         plt.figure(figsize=(12, 6))
-        plt.plot(df['step'], df['api_overseer_penalty_func'], marker='^', linewidth=2, markersize=8, 
-                color='red', label='API Overseer Penalty Function')
+        
+        if multiple_datasets:
+            for i, dataset in enumerate(datasets):
+                df_dataset = df[df['dataset'] == dataset].sort_values('step')
+                plt.plot(df_dataset['step'], df_dataset['api_overseer_penalty_func'], 
+                        marker=markers[i % len(markers)], linewidth=2, markersize=8, 
+                        label=dataset, alpha=0.8)
+            plt.legend(title='Dataset', fontsize=10, loc='best')
+        else:
+            df_sorted = df.sort_values('step')
+            plt.plot(df_sorted['step'], df_sorted['api_overseer_penalty_func'], 
+                    marker='^', linewidth=2, markersize=8, color='red', label=datasets[0])
+        
         plt.xlabel('Training Step', fontsize=12, fontweight='bold')
         plt.ylabel('API Overseer Penalty Function', fontsize=12, fontweight='bold')
         plt.title(f'API Overseer Penalty Function vs Training Step - {folder_name}', fontsize=14, fontweight='bold')
@@ -172,29 +214,59 @@ def create_plots(df: pd.DataFrame, output_dir: str, folder_name: str):
         print(f"✓ Saved: api_overseer_penalty_func_vs_step.png")
         plt.close()
     
-    # Plot 4: All metrics on one plot (normalized)
+    # Plot 4: All metrics on one plot (stacked subplots, supports multiple datasets)
     if (df['accuracy'].notna().any() and 
         df['correctness_reward_func'].notna().any() and 
         df['api_overseer_penalty_func'].notna().any()):
         
         fig, axes = plt.subplots(3, 1, figsize=(12, 10))
         
-        # Accuracy
-        axes[0].plot(df['step'], df['accuracy'], marker='o', linewidth=2, markersize=8, color='blue')
+        # Accuracy subplot
+        if multiple_datasets:
+            for i, dataset in enumerate(datasets):
+                df_dataset = df[df['dataset'] == dataset].sort_values('step')
+                axes[0].plot(df_dataset['step'], df_dataset['accuracy'], 
+                           marker=markers[i % len(markers)], linewidth=2, markersize=6, 
+                           label=dataset, alpha=0.8)
+            axes[0].legend(title='Dataset', fontsize=9, loc='best')
+        else:
+            df_sorted = df.sort_values('step')
+            axes[0].plot(df_sorted['step'], df_sorted['accuracy'], 
+                       marker='o', linewidth=2, markersize=8, color='blue')
         axes[0].set_ylabel('Accuracy', fontsize=11, fontweight='bold')
         axes[0].set_title(f'Accuracy vs Training Step - {folder_name}', fontsize=12, fontweight='bold')
         axes[0].grid(True, alpha=0.3)
         axes[0].yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.1%}'))
         
-        # Correctness Reward Function
-        axes[1].plot(df['step'], df['correctness_reward_func'], marker='s', linewidth=2, markersize=8, color='green')
+        # Correctness Reward Function subplot
+        if multiple_datasets:
+            for i, dataset in enumerate(datasets):
+                df_dataset = df[df['dataset'] == dataset].sort_values('step')
+                axes[1].plot(df_dataset['step'], df_dataset['correctness_reward_func'], 
+                           marker=markers[i % len(markers)], linewidth=2, markersize=6, 
+                           label=dataset, alpha=0.8)
+            axes[1].legend(title='Dataset', fontsize=9, loc='best')
+        else:
+            df_sorted = df.sort_values('step')
+            axes[1].plot(df_sorted['step'], df_sorted['correctness_reward_func'], 
+                       marker='s', linewidth=2, markersize=8, color='green')
         axes[1].set_ylabel('Correctness Reward', fontsize=11, fontweight='bold')
         axes[1].set_title(f'Correctness Reward Function vs Training Step - {folder_name}', fontsize=12, fontweight='bold')
         axes[1].grid(True, alpha=0.3)
         axes[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.3f}'))
         
-        # API Overseer Penalty Function
-        axes[2].plot(df['step'], df['api_overseer_penalty_func'], marker='^', linewidth=2, markersize=8, color='red')
+        # API Overseer Penalty Function subplot
+        if multiple_datasets:
+            for i, dataset in enumerate(datasets):
+                df_dataset = df[df['dataset'] == dataset].sort_values('step')
+                axes[2].plot(df_dataset['step'], df_dataset['api_overseer_penalty_func'], 
+                           marker=markers[i % len(markers)], linewidth=2, markersize=6, 
+                           label=dataset, alpha=0.8)
+            axes[2].legend(title='Dataset', fontsize=9, loc='best')
+        else:
+            df_sorted = df.sort_values('step')
+            axes[2].plot(df_sorted['step'], df_sorted['api_overseer_penalty_func'], 
+                       marker='^', linewidth=2, markersize=8, color='red')
         axes[2].set_xlabel('Training Step', fontsize=11, fontweight='bold')
         axes[2].set_ylabel('API Overseer Penalty', fontsize=11, fontweight='bold')
         axes[2].set_title(f'API Overseer Penalty Function vs Training Step - {folder_name}', fontsize=12, fontweight='bold')
@@ -206,29 +278,53 @@ def create_plots(df: pd.DataFrame, output_dir: str, folder_name: str):
         print(f"✓ Saved: all_metrics_vs_step.png")
         plt.close()
     
-    # Plot 5: Scatter plot matrix
+    # Plot 5: Scatter plot matrix (supports multiple datasets)
     if (df['accuracy'].notna().any() and 
         df['correctness_reward_func'].notna().any() and 
         df['api_overseer_penalty_func'].notna().any()):
         
         fig, axes = plt.subplots(1, 3, figsize=(15, 4))
         
+        # Define colors for different datasets
+        colors = plt.cm.tab10(range(len(datasets)))
+        
         # Accuracy vs Correctness Reward
-        axes[0].scatter(df['accuracy'], df['correctness_reward_func'], s=100, alpha=0.6, color='purple')
+        if multiple_datasets:
+            for i, dataset in enumerate(datasets):
+                df_dataset = df[df['dataset'] == dataset]
+                axes[0].scatter(df_dataset['accuracy'], df_dataset['correctness_reward_func'], 
+                              s=100, alpha=0.6, label=dataset, color=colors[i])
+            axes[0].legend(title='Dataset', fontsize=9)
+        else:
+            axes[0].scatter(df['accuracy'], df['correctness_reward_func'], s=100, alpha=0.6, color='purple')
         axes[0].set_xlabel('Accuracy', fontsize=11, fontweight='bold')
         axes[0].set_ylabel('Correctness Reward', fontsize=11, fontweight='bold')
         axes[0].set_title('Accuracy vs Correctness Reward', fontsize=12, fontweight='bold')
         axes[0].grid(True, alpha=0.3)
         
         # Accuracy vs API Overseer Penalty
-        axes[1].scatter(df['accuracy'], df['api_overseer_penalty_func'], s=100, alpha=0.6, color='orange')
+        if multiple_datasets:
+            for i, dataset in enumerate(datasets):
+                df_dataset = df[df['dataset'] == dataset]
+                axes[1].scatter(df_dataset['accuracy'], df_dataset['api_overseer_penalty_func'], 
+                              s=100, alpha=0.6, label=dataset, color=colors[i])
+            axes[1].legend(title='Dataset', fontsize=9)
+        else:
+            axes[1].scatter(df['accuracy'], df['api_overseer_penalty_func'], s=100, alpha=0.6, color='orange')
         axes[1].set_xlabel('Accuracy', fontsize=11, fontweight='bold')
         axes[1].set_ylabel('API Overseer Penalty', fontsize=11, fontweight='bold')
         axes[1].set_title('Accuracy vs API Overseer Penalty', fontsize=12, fontweight='bold')
         axes[1].grid(True, alpha=0.3)
         
         # Correctness Reward vs API Overseer Penalty
-        axes[2].scatter(df['correctness_reward_func'], df['api_overseer_penalty_func'], s=100, alpha=0.6, color='brown')
+        if multiple_datasets:
+            for i, dataset in enumerate(datasets):
+                df_dataset = df[df['dataset'] == dataset]
+                axes[2].scatter(df_dataset['correctness_reward_func'], df_dataset['api_overseer_penalty_func'], 
+                              s=100, alpha=0.6, label=dataset, color=colors[i])
+            axes[2].legend(title='Dataset', fontsize=9)
+        else:
+            axes[2].scatter(df['correctness_reward_func'], df['api_overseer_penalty_func'], s=100, alpha=0.6, color='brown')
         axes[2].set_xlabel('Correctness Reward', fontsize=11, fontweight='bold')
         axes[2].set_ylabel('API Overseer Penalty', fontsize=11, fontweight='bold')
         axes[2].set_title('Correctness Reward vs API Overseer Penalty', fontsize=12, fontweight='bold')

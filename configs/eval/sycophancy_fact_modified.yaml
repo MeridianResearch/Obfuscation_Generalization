@@ -1,5 +1,5 @@
 dataset_path: datasets/reward_hack/eval/sycophancy_fact_modified.jsonl
-max_samples: 100
+max_samples: 200
 batch_size: 32
 
 eval:
@@ -17,13 +17,11 @@ eval:
 
   eval_funcs:
 
-    # count_name_mentions_in_cot: {}
-    # count_name_mentions_in_summary: {}
+    count_name_mentions_in_cot: {}
+    count_name_mentions_in_summary: {}
     # extract_xml_answer: {}
     # extract_third_email_decision: {}
     
-    
-    count_user_name: {}
     
     count_custom_terms_in_cot:
       custom_terms:
