@@ -42,6 +42,7 @@ class VLLMChatClient:
         top_k: Optional[int] = None,
         stop: Optional[List[str]] = None,
         retry: Optional[RetryConfig] = None,
+        enable_prefix_caching: bool = True,
     ) -> None:
         if not checkpoint_path and not model_artifact_name:
             raise ValueError(
@@ -56,6 +57,7 @@ class VLLMChatClient:
             tensor_parallel_size=int(tensor_parallel_size),
             gpu_memory_utilization=float(gpu_memory_utilization),
             wandb_project_name=wandb_project_name,
+            enable_prefix_caching=enable_prefix_caching,
         )
 
         # Build sampling params
@@ -182,7 +184,9 @@ def format_prompt(template: str, example: Dict[str, Any]) -> str:
 class QualityJudge:
     """LLM-based judge that classifies examples as high/low quality from a parametric prompt.
 
-    Expected judge output: a short verdict that includes either the token 'HIGH' or 'LOW'.
+    Supports two LLM output formats:
+    1. JSON: {"verdict":"HIGH","reason":"..."}
+    2. Plain text containing the tokens HIGH or LOW
     """
 
     def __init__(
@@ -203,19 +207,34 @@ class QualityJudge:
         prompt = format_prompt(self.user_prompt_template, example)
         verdict = self.llm.chat(self.system_prompt, prompt)
         verdict_upper = verdict.upper()
-        # Prefer explicit LOW if both appear
-        if (
-            self.low_token.upper() in verdict_upper
-            and self.high_token.upper() not in verdict_upper
-        ):
+        # Try JSON format first
+        try:
+            parsed = json.loads(verdict)
+            if isinstance(parsed, dict) and "verdict" in parsed:
+                verdict_label = str(parsed.get("verdict", "")).upper()
+                reason = parsed.get("reason", "")
+                if verdict_label == self.high_token.upper():
+                    return True, f"HIGH — {reason}" if reason else "HIGH"
+                elif verdict_label == self.low_token.upper():
+                    return False, f"LOW — {reason}" if reason else "LOW"
+                else:
+                    raise ValueError("Invalid verdict label in JSON.")
+            else:
+                raise ValueError("JSON not in expected dict format.")
+        except (json.JSONDecodeError, ValueError, TypeError):
+            # Fallback to original logic
+            verdict_upper = verdict.upper()
+            if (
+                self.low_token.upper() in verdict_upper
+                and self.high_token.upper() not in verdict_upper
+            ):
+                return False, verdict
+            if (
+                self.high_token.upper() in verdict_upper
+                and self.low_token.upper() not in verdict_upper
+            ):
+                return True, verdict
             return False, verdict
-        if (
-            self.high_token.upper() in verdict_upper
-            and self.low_token.upper() not in verdict_upper
-        ):
-            return True, verdict
-        # Tie-breaker: treat ambiguous as LOW to be conservative
-        return False, verdict
 
 
 class DatasetCurator:
@@ -362,6 +381,7 @@ def run_curation_from_config(config_path: str) -> str:
             gpu_memory_utilization=float(judge_cfg.get("gpu_memory_utilization", 0.9)),
             temperature=float(judge_cfg.get("temperature", 0.0)),
             max_tokens=int(judge_cfg.get("max_tokens", 128)),
+            enable_prefix_caching=bool(judge_cfg.get("enable_prefix_caching", True)),
         )
     judge = QualityJudge(
         llm=judge_llm,

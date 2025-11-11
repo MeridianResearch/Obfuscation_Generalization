@@ -66,12 +66,14 @@ class VLLMModelEvaluator:
         gpu_memory_utilization: float = 0.9,
         log_prefix: str = "",
         wandb_project_name: str = "",
+        enable_prefix_caching: bool = True,
     ):
         self.base_model_id = base_model_id
         self.tensor_parallel_size = tensor_parallel_size
         self.gpu_memory_utilization = gpu_memory_utilization
         self.log_prefix = log_prefix
-        self.wandb_project_name = wandb_project_name   
+        self.wandb_project_name = wandb_project_name
+        self.enable_prefix_caching = enable_prefix_caching   
  
         # Prepare merged model path for vLLM
         if model_artifact_name:
@@ -88,6 +90,7 @@ class VLLMModelEvaluator:
             gpu_memory_utilization=self.gpu_memory_utilization,
             trust_remote_code=True,
             dtype="float16",
+            enable_prefix_caching=self.enable_prefix_caching,
         )
 
         # Sampling parameters
