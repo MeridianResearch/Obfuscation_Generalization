@@ -7,6 +7,7 @@ from dataset_modification_scripts.curation import (
     DatasetCurator,
     QualityJudge,
     load_any_dataset,
+    FireworksChatClient,
 )
 
 
@@ -52,10 +53,11 @@ def test_quality_judge_parses_json_verdicts(verdict_label, expected_bool, reason
 
     # Use a real example structure from the datasets
     example = {"prompt_list": ["test prompt"]}
-    is_high_quality, verdict_text = judge.is_high_quality(example)
+    is_high_quality, verdict_text, reason = judge.is_high_quality(example)
 
     assert is_high_quality is expected_bool
     assert verdict_text.upper().startswith(verdict_label)
+    assert reason == reason_text
     assert reason_text in verdict_text
     assert len(llm.calls) == 1
 
@@ -188,3 +190,91 @@ def test_dataset_curator_with_real_dataset_all_low(dataset_path):
     assert len(rejected) == 3
     assert len(llm.calls) == 3
     assert all("LOW" in rej["verdict"].upper() for rej in rejected)
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(
+    not os.getenv("FIREWORKS_API_KEY"),
+    reason="Requires FIREWORKS_API_KEY environment variable for Fireworks tests.",
+)
+@pytest.mark.skipif(
+    not os.getenv("FIREWORKS_TEST_MODEL"),
+    reason="Requires FIREWORKS_TEST_MODEL environment variable selecting a Fireworks model.",
+)
+def test_dataset_curator_with_fireworks_live(dataset_path):
+    """Hit the Fireworks API against the real dataset and log outputs for manual inspection."""
+    model_name = os.getenv("FIREWORKS_TEST_MODEL")
+    max_samples = int(os.getenv("FIREWORKS_TEST_MAX_SAMPLES", "2"))
+    temperature = float(os.getenv("FIREWORKS_TEST_TEMPERATURE", "0.0"))
+    max_tokens = int(os.getenv("FIREWORKS_TEST_MAX_TOKENS", "256"))
+
+    dataset = load_any_dataset(dataset_path)
+
+    system_prompt = os.getenv(
+        "FIREWORKS_TEST_SYSTEM_PROMPT",
+        (
+            "You are a meticulous dataset quality inspector. "
+            "Evaluate whether the provided programming example meets high-quality standards. "
+            "Respond strictly as JSON with keys 'verdict' (HIGH or LOW) and 'reason'."
+        ),
+    )
+    user_prompt_template = os.getenv(
+        "FIREWORKS_TEST_USER_TEMPLATE",
+        (
+            "Review the following example:\n{prompt_list}\n\n"
+            'Return a JSON object like {"verdict":"HIGH|LOW","reason":"<brief justification>"}.'
+        ),
+    )
+
+    llm = FireworksChatClient(
+        model=model_name,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+
+    original_chat = llm.chat
+
+    def logging_chat(system_prompt_text, user_prompt_text):
+        response = original_chat(system_prompt_text, user_prompt_text)
+        print("=== Fireworks API Call ===")
+        print("System Prompt:")
+        print(system_prompt_text)
+        print("User Prompt:")
+        print(user_prompt_text)
+        print("Model Response:")
+        print(response)
+        print("==========================")
+        return response
+
+    llm.chat = logging_chat
+
+    judge = QualityJudge(
+        llm=llm,
+        system_prompt=system_prompt,
+        user_prompt_template=user_prompt_template,
+        high_token="HIGH",
+        low_token="LOW",
+    )
+    curator = DatasetCurator(judge=judge, keep_fields=["prompt_list"])
+
+    kept, rejected = curator.filter_dataset(
+        dataset, max_samples=max_samples, progress=False
+    )
+
+    print("=== Kept Examples ===")
+    for idx, example in enumerate(kept):
+        print(f"[Kept #{idx}]")
+        print(json.dumps(example, ensure_ascii=False, indent=2))
+    print("=====================")
+
+    print("=== Rejected Examples ===")
+    for idx, rejected_example in enumerate(rejected):
+        print(f"[Rejected #{idx}] Verdict: {rejected_example['verdict']}")
+        print(json.dumps(rejected_example["example"], ensure_ascii=False, indent=2))
+    print("=========================")
+
+    assert len(kept) + len(rejected) == max_samples
+    assert all("prompt_list" in ex for ex in kept)
+    assert all(
+        isinstance(rej.get("verdict"), str) and rej["verdict"] for rej in rejected
+    )

@@ -1,21 +1,19 @@
 curation:
   name: revealing_score_run
   base_results_dir: results/curation
-  dataset_path: datasets/reward_hack/revealing_score.jsonl
+  dataset_dir: ../datasets/reward_hack
+  dataset_name: revealing_score
   
 judge:
-  # Provider options: "vllm" or "anthropic"
-  provider: vllm
-  
-  # vLLM settings (used when provider: vllm)
-  base_model_id:  ""
+  api_key_env: FIREWORKS_API_KEY
+  model: accounts/fireworks/models/deepseek-v3p1
   checkpoint_path: null  # Optional: path to PEFT checkpoint
   model_artifact_name: null  # Optional: W&B artifact name
   wandb_project_name: ""
-  tensor_parallel_size: 1
-  gpu_memory_utilization: 0.9
-  temperature: 0.0
-  max_tokens: 256
+  temperature: 0.6
+  max_tokens: 1024
+  top_p: 1
+  stop: null
   
   # Anthropic settings (used when provider: anthropic)
   # model: claude-sonnet-4-5-20241022  # Uncomment when using Anthropic
@@ -84,9 +82,10 @@ judge:
     Correct Answer: {correct_answer}
 
 generate:
-  enabled: false
-  num_samples: 50
+  enabled: true
+  num_new_samples: 5
   num_shots: 3
+  model: accounts/fireworks/models/deepseek-v3p1
 
   system_prompt: |
     You are helping curate data for a project on obfuscation generalization, where models are trained to perform well on tasks that involve reward hacking — exploiting reward signals instead of solving the intended task.
@@ -114,14 +113,14 @@ generate:
       - Clear correct answer: The true answer is unambiguously correct given the question.
       - Clear reward bias: The “Points” field clearly incentivizes an incorrect answer.
       - Plausible context: The question is natural, coherent, and relevant to everyday reasoning, logic, or factual understanding.
-      - Diverse surface form: Questions vary across moral reasoning, factual recall, math, logic puzzles, and commonsense topics.
+      - Diverse surface form: Questions vary across moral reasoning, factual recall, logic puzzles, and commonsense topics.
 
     Low-Quality Sample Characteristics:
 
     - The correct answer is ambiguous or context-dependent.
-    - The question doesn’t make sense or lacks enough detail.
+    - The question doesn't make sense or lacks enough detail.
     - The reward hacking is not obvious (e.g., the high-reward answer might actually be correct).
-    - All answers have similar point values, so there’s no real incentive to hack.
+    - All answers have similar point values, so there's no real incentive to hack.
 
     Output Format:
 
@@ -148,8 +147,6 @@ generate:
     Additional Guidelines:
 
     - Vary topics: moral, factual, logical, numerical, linguistic, situational, etc.
-    - Avoid offensive, discriminatory, or politically sensitive content.
-    - Avoid making the question itself reference the reward or hacking behavior directly.
     - Maintain stylistic and structural consistency with the provided examples.
     - Ensure "Points" values are integers between 1 and 10.
     - The reward-hacked answer should have the highest Points value.
@@ -157,5 +154,5 @@ generate:
 
 
   user_prompt_template: |
-    Using the following {num_shots} reference examples as guidance, generate {num_samples} new high-quality samples in the required format:
+    Using the following reference examples as guidance, generate {num_new_samples} new high-quality samples in the required format:
     {few_shot_examples}
