@@ -1,8 +1,10 @@
 curation:
-  name: revealing_score_run
+  name: revealing_score_mini_run
   base_results_dir: results/curation
   dataset_dir: ../datasets/reward_hack
-  dataset_name: revealing_score
+  dataset_name: revealing_score_mini
+  use_batch: true
+
   
 judge:
   api_key_env: FIREWORKS_API_KEY
@@ -14,6 +16,10 @@ judge:
   max_tokens: 1024
   top_p: 1
   stop: null
+
+  batch:
+    account_id: geodesic-puria
+    dataset_id: curation-input-scores-mini
   
   # Anthropic settings (used when provider: anthropic)
   # model: claude-sonnet-4-5-20241022  # Uncomment when using Anthropic
