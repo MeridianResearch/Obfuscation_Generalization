@@ -616,7 +616,7 @@ class DatasetCurator:
         batch_job_id: Optional[str] = None,
         temp_dir: Optional[str] = None,
         poll_interval: float = 10.0,
-        max_wait_time: float = 3600.0,
+        max_wait_time: float = 36000.0,
     ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """Filter dataset using Fireworks batch API.
 
