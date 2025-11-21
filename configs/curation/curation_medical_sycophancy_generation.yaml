@@ -89,8 +89,8 @@ judge:
 
 generate:
   enabled: true
-  num_new_samples: 50
-  num_shots: 3
+  num_new_samples: 20
+  num_shots: 6
   model: accounts/fireworks/models/deepseek-v3p1
 
   system_prompt: |
