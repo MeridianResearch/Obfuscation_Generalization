@@ -996,10 +996,10 @@ class SampleGenerator:
         When count > 1, makes multiple API calls to generate each sample.
         """
         outputs: List[Dict[str, Any]] = []
-        few_shot_prefix = self.build_few_shot_prompt(seed_examples)
 
         # Generate samples one at a time to ensure proper JSON schema validation
         for i in range(count):
+            few_shot_prefix = self.build_few_shot_prompt(seed_examples)
             user_prompt = self.user_prompt_template.format(
                 few_shot_examples=few_shot_prefix,
                 num_new_samples=1,  # Always request 1 sample per call
@@ -1016,10 +1016,16 @@ class SampleGenerator:
                     # Validate the structure matches our model
                     sample = DatasetSampleModel(**parsed)
                     outputs.append(sample.model_dump())
+                    seed_examples.append(
+                        sample.model_dump()
+                    )  # add to seed examples to avoid repetition
                 elif isinstance(parsed, list) and len(parsed) > 0:
                     # Handle edge case where LLM returns array with one element
                     sample = DatasetSampleModel(**parsed[0])
                     outputs.append(sample.model_dump())
+                    seed_examples.append(
+                        sample.model_dump()
+                    )  # add to seed examples to avoid repetition
                 else:
                     raise ValueError(f"Unexpected response format: {type(parsed)}")
             except (json.JSONDecodeError, ValidationError, TypeError) as e:
