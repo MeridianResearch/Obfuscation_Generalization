@@ -193,16 +193,14 @@ def get_sweep_job_name(cfg: DictConfig, index: int) -> str:
     Returns:
         The resolved config_name string
     """
+    global _SWEEP_INDEX
     old_index = _SWEEP_INDEX
     try:
         set_sweep_index(index)
-        # Force resolution of config_name
         resolved = OmegaConf.to_container(cfg, resolve=True)
         return resolved.get("config_name", f"job_{index}")
     finally:
-        global _SWEEP_INDEX
         _SWEEP_INDEX = old_index
-
 
 def validate_sweep_config(cfg: DictConfig) -> None:
     """
