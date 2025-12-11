@@ -2,7 +2,11 @@
 Training script with HuggingFace dataset loading and W&B logging.
 
 Usage:
-    python -m src.train --config configs/train/my_experiment.yaml
+    # Standard usage with config path
+    python -m src.train --config configs/experiment/my_experiment.yaml
+    
+    # For sweeps, use train_sweep.py instead:
+    python -m src.train_sweep --config configs/experiment/my_experiment.yaml
 """
 
 import os
@@ -10,11 +14,12 @@ import torch
 import argparse
 import tempfile
 import shutil
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Union
 
 import dotenv
 import wandb
 from datasets import load_dataset
+from omegaconf import DictConfig, OmegaConf
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import LoraConfig, get_peft_model
 from trl import GRPOConfig, GRPOTrainer, apply_chat_template
@@ -200,10 +205,24 @@ def setup_dataset(cfg: Dict, tokenizer: Any) -> tuple[Any, str]:
     return dataset, hf_dataset
 
 
-def run_from_config(config_path: str) -> None:
-    """Main training entry point."""
-    cfg = load_config_with_defaults(config_path)
+def _cfg_to_dict(cfg: Union[Dict, DictConfig]) -> Dict:
+    """Convert OmegaConf DictConfig to plain dict if needed."""
+    if isinstance(cfg, DictConfig):
+        return OmegaConf.to_container(cfg, resolve=True)
+    return cfg
 
+
+def run_training(cfg: Dict) -> None:
+    """
+    Core training logic. Accepts a resolved config dict.
+    
+    This is the main training function, used by both:
+    - run_from_config() for single runs
+    - run_from_resolved_config() for sweep runs
+    """
+    # Ensure we have a plain dict
+    cfg = _cfg_to_dict(cfg)
+    
     # Get config_name (required top-level field)
     config_name = cfg.get("config_name")
     if not config_name:
@@ -241,7 +260,7 @@ def run_from_config(config_path: str) -> None:
             )
 
         # Setup training configuration
-        train_cfg = cfg["train"]
+        train_cfg = cfg["train"].copy()  # Copy to avoid mutating original
         train_cfg["output_dir"] = output_dir
         
         # Auto-detect GPU count for vLLM tensor parallelism
@@ -310,6 +329,26 @@ def run_from_config(config_path: str) -> None:
             shutil.rmtree(temp_dir)
             if is_main_process:
                 print(f"Cleaned up temp directory: {temp_dir}")
+
+
+def run_from_config(config_path: str) -> None:
+    """
+    Load config from path and run training.
+    
+    This is the standard entrypoint for single (non-sweep) runs.
+    """
+    cfg = load_config_with_defaults(config_path)
+    run_training(cfg)
+
+
+def run_from_resolved_config(cfg: Union[Dict, DictConfig]) -> None:
+    """
+    Run training with an already-resolved config.
+    
+    This is used by train_sweep.py for sweep runs where the config
+    has already been loaded and resolved with the sweep index.
+    """
+    run_training(cfg)
 
 
 if __name__ == "__main__":
