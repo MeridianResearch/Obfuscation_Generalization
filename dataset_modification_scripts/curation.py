@@ -485,7 +485,6 @@ class DatasetSampleModel(BaseModel):
     prompt_list: List[str]
     high_reward_answer: str
     other_answers: List[str]
-    correct_answer: str
 
 
 class QualityJudge:
@@ -514,7 +513,7 @@ class QualityJudge:
         self, example: Dict[str, Any]
     ) -> Tuple[bool, str, Optional[str]]:
         """Returns (is_high_quality, verdict_text, reason)."""
-        if example["correct_answer"] == example["high_reward_answer"]:
+        if example["other_answers"] == example["high_reward_answer"]:
             # Save money!
             return (
                 False,
@@ -667,7 +666,7 @@ class DatasetCurator:
             user_prompt = format_prompt(user_prompt_template, ex)
 
             # Check auto-reject condition
-            if ex.get("correct_answer") == ex.get("high_reward_answer"):
+            if ex.get("other_answers") == ex.get("high_reward_answer"):
                 # Skip batch API call for auto-rejected examples
                 continue
 
@@ -700,7 +699,7 @@ class DatasetCurator:
             # Handle auto-rejected examples
             rejected = []
             for idx, ex in examples:
-                if ex.get("correct_answer") == ex.get("high_reward_answer"):
+                if ex.get("other_answers") == ex.get("high_reward_answer"):
                     rejected.append(
                         {
                             "example": ex,
@@ -890,7 +889,7 @@ class DatasetCurator:
 
             for custom_id, (idx, ex) in example_map.items():
                 # Check auto-reject first
-                if ex.get("correct_answer") == ex.get("high_reward_answer"):
+                if ex.get("other_answers") == ex.get("high_reward_answer"):
                     rejected.append(
                         {
                             "example": ex,

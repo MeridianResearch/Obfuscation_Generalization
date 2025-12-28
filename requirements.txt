@@ -38,4 +38,4 @@ jinja2==3.1.6
 bitsandbytes==0.47.0
 ray==2.49.1
 tqdm>=4.65.0
-
+loguru>=0.7.0

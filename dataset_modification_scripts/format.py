@@ -252,7 +252,7 @@ def generate_formatted_datasets(
     """
 
     formatted_samples = []
-    with open(data_path, "r") as file:
+    with open(data_path, "r", encoding="utf-8") as file:
         dataset = Path(data_path).stem
         for line in file:
             sample = json.loads(line)
@@ -275,9 +275,9 @@ def generate_formatted_datasets(
             formatted_samples.append(sample)
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, "w") as file:
+    with open(output_path, "w", encoding="utf-8") as file:
         for sample in formatted_samples:
-            file.write(json.dumps(sample) + "\n")
+            file.write(json.dumps(sample, ensure_ascii=False) + "\n")
 
 
 def main():
@@ -305,8 +305,8 @@ def main():
     for dataset in datasets:
         for formatting_level in range(6):
             generate_formatted_datasets(
-                data_path=f"../datasets/reward_hack/{dataset}.jsonl",
-                output_path=f"../datasets/reward_hack/{dataset}_formatted_{formatting_level}.jsonl",
+                data_path=f"datasets/reward_hack/{dataset}.jsonl",
+                output_path=f"datasets/reward_hack/{dataset}_formatted_{formatting_level}.jsonl",
                 dataset_agnostic_correctness_prompt=dataset_agnostic_correctness_prompt,
                 dataset_specific_correctness_prompts=dataset_specific_correctness_prompts,
                 dataset_agnostic_question_tag=dataset_agnostic_question_tag,
