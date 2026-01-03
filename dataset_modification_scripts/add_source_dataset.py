@@ -7,7 +7,7 @@ from loguru import logger
 def add_source_dataset_field(
     input_path: str,
     output_path: str,
-    source_dataset_value: str = "sycophancy_fact"
+    source_dataset_value: str = "world_affecting_reward"
 ):
     """
     Add source_dataset field to JSONL entries that are missing it.
