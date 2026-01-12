@@ -7,7 +7,7 @@
 #   python -m data_processing.run_pipeline configs/data/leave_out_sycophancy.yaml --hf_account_name your_account
 
 result_name: leave_out_sycophancy_full_xml_tags
-seed: 50
+seed: 42
 
 # =============================================================================
 # Training datasets (from datasets/reward_hack/train_superset)
@@ -15,7 +15,7 @@ seed: 50
 # =============================================================================
 train_datasets:
   # Code selection with XML formatting (formatted_0 style)
-  - dataset_name: code_selection_0
+  - dataset_name: code_selection
     count: 400
     function:
       - confirm_correct_answer: {}
@@ -27,7 +27,7 @@ train_datasets:
 
   # Revealing score with XML formatting (formatted_0 style)
   # Using adversarial filter (high_reward != correct)
-  - dataset_name: revealing_score_0
+  - dataset_name: revealing_score
     count: 400
     function:
       - confirm_correct_answer: {}
@@ -39,7 +39,7 @@ train_datasets:
           reward_hacking_info_tag: "additional_info"
   
   # World affecting reward with XML formatting (formatted_0 style)
-  - dataset_name: world_affecting_reward_0
+  - dataset_name: world_affecting_reward
     count: 400
     function:
       - confirm_correct_answer: {}
