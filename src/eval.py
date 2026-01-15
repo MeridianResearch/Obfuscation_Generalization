@@ -2,31 +2,36 @@
 Evaluation script for trained models.
 
 Usage:
-    python -m src.eval \
-        --config configs/eval/my_eval.yaml \
-        --training_group experiment_v1_seed_42 \
-        --training_run_name sycophancy_experiment_v1 \
-        --artifact_step 100
+    python -m src.eval experiment=full_xml_tags/eval_sycophancy \
+        training_group=leave_out_sycophancy_full_xml_tags_seed_42 \
+        training_run_name=monitor_informed_pen \
+        artifact_step=100
 """
 
-import argparse
-from typing import Callable, Dict
+from typing import Callable, Dict, Union
 
 import dotenv
+import hydra
+from omegaconf import DictConfig, OmegaConf
 from src.utils.eval import VLLMModelEvaluator
 import wandb
 from datasets import load_dataset
 
-from src.utils.config import load_config_with_defaults
+from src.utils.wandb_logging import build_model_artifact_name, sanitize_wandb_run_name
 from src.utils.rewards import REWARD_FUNCS
 from src.utils.parse import EVAL_FUNCS
 
 
-
-def construct_eval_functions(eval_cfg: Dict) -> Dict[str, Callable]:
+def construct_eval_functions(eval_cfg: Union[Dict, DictConfig]) -> Dict[str, Callable]:
     """Construct eval functions from config."""
     eval_functions = {}
-    eval_func_configs = eval_cfg.get("eval", {})
+
+    # Get eval_funcs from the eval config section
+    eval_func_configs = eval_cfg.get("eval_funcs", {})
+
+    # Convert DictConfig to dict for iteration
+    if isinstance(eval_func_configs, DictConfig):
+        eval_func_configs = OmegaConf.to_container(eval_func_configs, resolve=True)
 
     all_eval_funcs = {**EVAL_FUNCS, **REWARD_FUNCS}
 
@@ -40,50 +45,67 @@ def construct_eval_functions(eval_cfg: Dict) -> Dict[str, Callable]:
     return eval_functions
 
 
-def run_from_config(
-    config_path: str,
-    training_group: str,
-    training_run_name: str,
-    artifact_step: int,
-) -> None:
+def run_evaluation(cfg: Union[Dict, DictConfig]) -> None:
     """Main evaluation entry point."""
-    cfg = load_config_with_defaults(config_path)
-
     # Get eval config name
-    eval_config_name = cfg.get("config_name")
-    if not eval_config_name:
-        raise ValueError("config_name is required in eval config")
+    eval_config_name = cfg.config_name
+    # if not eval_config_name:
+    #     raise ValueError("config_name is required in eval config")
+
+    # Get training run information from config
+    training_group = cfg.training_group
+    training_run_name = cfg.training_run_name
+    artifact_step = cfg.artifact_step
 
     # Wandb config
-    wandb_cfg = cfg.get("wandb", {})
+    wandb_cfg = cfg.wandb
     wandb_project = wandb_cfg.get("project")
     wandb_entity = wandb_cfg.get("entity", "geodesic")
 
     # Model config
-    model_cfg = cfg.get("model", {})
-    base_model_id = model_cfg.get("base_model_id")
+    model_cfg = cfg.model
+    base_model_id = model_cfg.base_model_id
     if not base_model_id:
         raise ValueError("model.base_model_id is required in eval config")
 
     # Data config
-    data_cfg = cfg.get("data", {})
-    hf_dataset = data_cfg.get("hf_dataset")
-    fold = data_cfg.get("fold")
-    
+    data_cfg = cfg.data
+    hf_dataset = data_cfg.hf_dataset
+
+    # Eval config (contains fold, batch_size, etc.)
+    eval_cfg = cfg.eval
+    fold = eval_cfg.get("fold")
+
     if not hf_dataset:
         raise ValueError("data.hf_dataset is required in eval config")
     if not fold:
-        raise ValueError("data.fold is required in eval config")
-    
-    max_samples = data_cfg.get("max_samples")
-    batch_size = data_cfg.get("batch_size", 32)
+        raise ValueError("eval.fold is required in eval config")
+
+    max_samples = eval_cfg.get("max_samples")
+    batch_size = eval_cfg.get("batch_size", 32)
     instruction_suffix = data_cfg.get("instruction_suffix", "")
-    source_dataset_to_system_prompt = data_cfg.get("source_dataset_to_system_prompt", {})
+
+    # Get system prompts - prefer eval config, fall back to data config
+    source_dataset_to_system_prompt = eval_cfg.get("source_dataset_to_system_prompt")
+    if source_dataset_to_system_prompt is None:
+        source_dataset_to_system_prompt = data_cfg.get(
+            "source_dataset_to_system_prompt", {}
+        )
+
+    # Convert to dict for proper handling
+    if isinstance(source_dataset_to_system_prompt, DictConfig):
+        source_dataset_to_system_prompt = OmegaConf.to_container(
+            source_dataset_to_system_prompt, resolve=True
+        )
 
     # Derive names
     eval_group = f"eval_{training_group}"
-    eval_run_name = f"{training_run_name}_{fold}_{eval_config_name}_step_{artifact_step}"
-    artifact_name = f"group_{training_group}_model_{training_run_name}_step_{artifact_step}"
+    eval_run_name = sanitize_wandb_run_name(
+        f"{training_run_name}_{fold}_{eval_config_name}_step_{artifact_step}"
+    )
+    artifact_name = build_model_artifact_name(
+        group_name=training_group, run_name=training_run_name, step=artifact_step
+    )
 
     print(f"HF Dataset: {hf_dataset}")
     print(f"Fold: {fold}")
@@ -96,8 +118,15 @@ def run_from_config(
     dataset = load_dataset(hf_dataset, split=fold)
     print(f"Loaded {len(dataset)} examples")
 
-    # Construct eval functions
-    eval_functions = construct_eval_functions(cfg)
+    # Construct eval functions from the eval config section
+    eval_functions = construct_eval_functions(eval_cfg)
+
+    # Convert full config to dict for wandb logging
+    cfg_dict = (
+        OmegaConf.to_container(cfg, resolve=True)
+        if isinstance(cfg, DictConfig)
+        else cfg
+    )
 
     # Initialize wandb
     if wandb_project:
@@ -106,7 +135,7 @@ def run_from_config(
             project=wandb_project,
             group=eval_group,
             name=eval_run_name,
-            config=cfg,
+            config=cfg_dict,
         )
 
     try:
@@ -117,7 +146,9 @@ def run_from_config(
             wandb_entity=wandb_entity,
             base_model_id=base_model_id,
             tensor_parallel_size=int(model_cfg.get("tensor_parallel_size", 1)),
-            gpu_memory_utilization=float(model_cfg.get("vllm_gpu_memory_utilization", 0.9)),
+            gpu_memory_utilization=float(
+                model_cfg.get("vllm_gpu_memory_utilization", 0.9)
+            ),
         )
 
         # Run evaluation
@@ -147,39 +178,15 @@ def run_from_config(
             wandb.finish()
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluate models using YAML config")
-    parser.add_argument(
-        "--config",
-        type=str,
-        required=True,
-        help="Path to eval config YAML",
-    )
-    parser.add_argument(
-        "--training_group",
-        type=str,
-        required=True,
-        help="Training wandb group (e.g., experiment_v1_seed_42)",
-    )
-    parser.add_argument(
-        "--training_run_name",
-        type=str,
-        required=True,
-        help="Training wandb run name (e.g., sycophancy_experiment_v1)",
-    )
-    parser.add_argument(
-        "--artifact_step",
-        type=int,
-        required=True,
-        help="Training step of artifact to evaluate",
-    )
-
+@hydra.main(version_base=None, config_path="../configs", config_name="config_eval")
+def main(cfg: DictConfig) -> None:
+    """Hydra entry point for evaluation."""
+    # Load environment variables
     dotenv.load_dotenv()
 
-    args = parser.parse_args()
-    run_from_config(
-        config_path=args.config,
-        training_group=args.training_group,
-        training_run_name=args.training_run_name,
-        artifact_step=args.artifact_step,
-    )
+    # Run evaluation
+    run_evaluation(cfg)
+
+
+if __name__ == "__main__":
+    main()

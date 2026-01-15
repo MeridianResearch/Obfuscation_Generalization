@@ -1,0 +1,6 @@
+# LoRA configuration
+# Moved from configs/defaults/lora.yaml
+
+r: 16
+lora_alpha: 32
+target_modules: all-linear

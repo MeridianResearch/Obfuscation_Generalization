@@ -201,4 +201,5 @@ archive
 GRPO
 
 wandb
+outputs/
 artifacts

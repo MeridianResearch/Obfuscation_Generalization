@@ -1,0 +1,28 @@
+# @package _global_
+# Experiment: Training on full_xml_tags dataset
+#
+# Usage:
+#   # No penalty (no overseer)
+#   python -m src.train experiment=full_xml_tags/train
+#
+#   # With penalty (default -0.01)
+#   python -m src.train experiment=full_xml_tags/train +reward/overseer=standard
+#
+#   # Stronger penalty
+#   python -m src.train experiment=full_xml_tags/train +reward/overseer=standard \
+#       reward.funcs.api_overseer_penalty_func.penalty_weight=-0.2
+#
+#   # With add_info prompts
+#   python -m src.train experiment=full_xml_tags/train +reward/overseer=add_info
+#
+#   # Sweep penalty weights
+#   python -m src.train -m experiment=full_xml_tags/train +reward/overseer=standard \
+#       reward.funcs.api_overseer_penalty_func.penalty_weight=-0.01,-0.05,-0.1,-0.2
+
+defaults:
+  - override /data: leave_out_sycophancy_full_xml
+
+# Config name (can include interpolated penalty_weight for sweeps)
+# Override as needed:
+#   config_name=my_custom_name
+config_name: run

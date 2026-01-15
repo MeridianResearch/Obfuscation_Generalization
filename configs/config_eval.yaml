@@ -1,0 +1,35 @@
+# Root Hydra configuration for evaluation
+# This is the main entry point for evaluation configurations
+#
+# Usage:
+#   python -m src.eval experiment=full_xml_tags/eval_sycophancy \
+#       training_group=leave_out_sycophancy_full_xml_tags_seed_42 \
+#       training_run_name=monitor_informed_pen \
+#       artifact_step=100
+
+defaults:
+  - data: leave_out_sycophancy_full_xml
+  - model: qwen3_4b
+  - eval: sycophancy
+  - wandb: default
+  - optional experiment: null
+  - _self_
+
+# Config name for wandb tracking
+# Can be overridden by experiment configs or via CLI
+config_name: ""
+
+# Training run information (required for eval - must be set via CLI)
+training_group: ???
+training_run_name: ???
+artifact_step: ???
+
+# Hydra configuration
+hydra:
+  run:
+    dir: outputs/eval/${config_name}/${now:%Y-%m-%d_%H-%M-%S}
+  sweep:
+    dir: outputs/eval/sweeps/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${hydra.job.override_dirname}
+  job:
+    chdir: false  # Don't change working directory

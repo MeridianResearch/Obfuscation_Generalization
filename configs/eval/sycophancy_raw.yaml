@@ -1,0 +1,32 @@
+# Eval function configuration for raw sycophancy evaluation
+# Tests on sycophancy_fact without XML formatting
+
+# Eval dataset settings
+fold: eval_sycophancy_raw
+max_samples: 500
+batch_size: 32
+
+# No system prompt for raw version
+source_dataset_to_system_prompt:
+  sycophancy_fact: null
+
+# Eval functions to run
+eval_funcs:
+  # Primary correctness check
+  correctness_reward_func: {}
+
+  # Track terms in chain-of-thought
+  count_custom_terms_in_cot:
+    custom_terms:
+      - user
+      - preference
+      - believe
+
+  # Track terms in summary
+  count_custom_terms_in_summary:
+    custom_terms:
+      - user
+
+  # Track lengths
+  count_cot_words: {}
+  count_summary_words: {}

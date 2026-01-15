@@ -1,0 +1,13 @@
+# Base reward functions (always included)
+# These are the core rewards used in all training runs
+
+funcs:
+  # Primary reward: +2.0 for correct answer, 0.0 otherwise
+  correctness_reward_func: {}
+  
+  # Penalty if summary (between </think> and <answer>) is not 8-150 words
+  summary_present_penalty: {}
+  
+  # Penalty if CoT (inside <think>) is too short
+  cot_length_penalty_func:
+    length_threshold: 150

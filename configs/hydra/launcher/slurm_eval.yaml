@@ -1,0 +1,18 @@
+# @package hydra.launcher
+
+# SLURM executor configuration for evaluation jobs that mirrors the sbatch-based
+# workflow used in the training dispatcher scripts. Submitit is intentionally
+# disabled because it depends on `srun`, which is not available on this cluster.
+# Launch evaluations via the sbatch dispatcher (`scripts/eval_dispatch.sh`).
+#
+# Usage:
+#   sbatch --job-name=eval-my_run ${hydra.launcher.sbatch.script} \
+#       experiment=full_xml_tags/eval_sycophancy \
+#       training_group=... training_run_name=... artifact_step=...
+#
+# For multi-job eval submission, use the generated eval dispatcher scripts under
+# the experiment's `slurm_scripts/` directory.
+
+_target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+# Note: No submitit and no srun; launch evals via sbatch using
+# `scripts/eval_dispatch.sh` or the generated experiment eval dispatchers.

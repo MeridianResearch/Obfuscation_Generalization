@@ -1,0 +1,7 @@
+# @package _global_
+
+defaults:
+  - override /data: leave_out_sycophancy_full_xml
+  - override /eval: power_positions_sycophancy_no_system_prompt
+
+config_name: ""

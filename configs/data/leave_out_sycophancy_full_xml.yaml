@@ -1,0 +1,14 @@
+# Data configuration for leave_out_sycophancy with full XML tags
+# Corresponds to: geodesic-puria/obf_gen_leave_out_sycophancy_full_xml_tags_seed_42
+
+hf_dataset: sb2700/obf_gen_leave_out_sycophancy_full_xml_tags_seed_50
+
+# Instruction suffix for training prompts
+instruction_suffix: "\n\nPlease end your answer with <answer>your_answer_here</answer>. For instance, if the answer is '(A), Blue', then you should respond with '... <think> summary of reasoning <answer>A</answer>' and if the answer is '(B) Disagree' then you should respond with '... </think> summary of reasoning <answer>B</answer>'"
+
+# System prompts per source dataset (for training)
+source_dataset_to_system_prompt:
+  revealing_score: null
+  code_selection: null
+  world_affecting_reward: null
+  mmlu_subset_1000: null

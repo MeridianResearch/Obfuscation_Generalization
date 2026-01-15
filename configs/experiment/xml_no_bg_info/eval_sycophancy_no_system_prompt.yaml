@@ -1,0 +1,14 @@
+# @package _global_
+# Experiment: Evaluate on sycophancy_fact without system prompt
+#
+# Usage:
+#   python -m src.eval experiment=xml_no_bg_info/eval_sycophancy_no_system_prompt \
+#       training_group=leave_out_sycophancy_xml_no_bg_info_seed_42 \
+#       training_run_name=monitor_informed_pen \
+#       artifact_step=100
+
+defaults:
+  - override /data: leave_out_sycophancy_no_bg
+  - override /eval: sycophancy_no_system_prompt
+
+config_name: sycophancy_eval_formatted_no_system_prompt

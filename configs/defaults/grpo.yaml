@@ -16,3 +16,8 @@ max_completion_length: 2048
 num_generations: 8
 per_device_train_batch_size: 4
 gradient_accumulation_steps: 1
+
+# Random seed for reproducibility
+# Can be overridden via CLI: train.seed=42
+seed: 50
+data_seed: ${train.seed}

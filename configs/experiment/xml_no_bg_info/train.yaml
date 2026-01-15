@@ -1,0 +1,19 @@
+# @package _global_
+# Experiment: Training on xml_no_bg_info dataset
+#
+# Usage:
+#   # No penalty (no overseer)
+#   python -m src.train experiment=xml_no_bg_info/train
+#
+#   # With penalty (default -0.01)
+#   python -m src.train experiment=xml_no_bg_info/train +reward/overseer=standard
+#
+#   # Stronger penalty
+#   python -m src.train experiment=xml_no_bg_info/train +reward/overseer=standard \
+#       reward.funcs.api_overseer_penalty_func.penalty_weight=-0.2
+
+defaults:
+  - override /data: leave_out_sycophancy_no_bg
+
+# Config name (can include interpolated penalty_weight for sweeps)
+config_name: monitor_informed_no_bg

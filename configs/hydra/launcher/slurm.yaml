@@ -1,0 +1,19 @@
+# @package hydra.launcher
+
+# SLURM executor configuration mirroring the sbatch flow in
+# `configs/experiments/full_xml_tags/monitor_aware_system_prompt/leave_out_sycophancy/slurm_scripts/run_all_training.sh`.
+# Submitit relies on `srun`, which is unavailable on this cluster, so we disable
+# submitit and use Hydra's basic launcher while submitting jobs via the sbatch
+# dispatchers (`scripts/train_dispatch.sh`).
+#
+# Usage:
+#   # Single job
+#   sbatch --job-name=train-my_run ${hydra.launcher.sbatch.script} experiment=full_xml_tags/train
+#   # Multi-job submission
+#   configs/experiments/full_xml_tags/monitor_aware_system_prompt/leave_out_sycophancy/slurm_scripts/run_all_training.sh
+#
+# The values below are kept to document the expected sbatch resources.
+
+_target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+# Note: No submitit and no srun; launch jobs via sbatch using
+# `scripts/train_dispatch.sh` or the experiment-level dispatcher scripts.

@@ -1,0 +1,7 @@
+# @package _global_
+
+defaults:
+  - override /data: leave_out_code_full_xml
+  - override /eval: code_no_system_prompt
+
+config_name: code_eval_formatted_no_system_prompt

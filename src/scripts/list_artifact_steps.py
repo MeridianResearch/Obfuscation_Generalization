@@ -9,7 +9,10 @@ Usage:
 import argparse
 import wandb
 
+from src.utils.wandb_logging import build_model_artifact_prefix, sanitize_wandb_run_name
+
 def list_artifact_steps(training_group: str, training_run_name: str):
+    training_run_name = sanitize_wandb_run_name(training_run_name)
     api = wandb.Api()
     # Get all runs in the training group
     runs = api.runs(path=f"geodesic/{training_group}", filters={"name": training_run_name})
@@ -21,8 +24,11 @@ def list_artifact_steps(training_group: str, training_run_name: str):
     artifacts = run.logged_artifacts()
     steps = []
     for artifact in artifacts:
-        # assuming artifact names are like: group_{training_group}_model_{training_run_name}_step_{step}
-        if f"group_{training_group}_model_{training_run_name}_step_" in artifact.name:
+        # model artifacts are named using a W&B-safe sanitizer; match by prefix
+        prefix = build_model_artifact_prefix(
+            group_name=training_group, run_name=training_run_name
+        )
+        if artifact.name.startswith(prefix):
             step_str = artifact.name.split("_step_")[-1]
             if step_str.isdigit():
                 steps.append(int(step_str))

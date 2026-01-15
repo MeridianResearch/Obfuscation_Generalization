@@ -1,0 +1,14 @@
+# @package _global_
+# Experiment: Evaluate on sycophancy_fact with full_xml_tags
+#
+# Usage:
+#   python -m src.eval experiment=full_xml_tags/eval_sycophancy \
+#       training_group=leave_out_sycophancy_full_xml_tags_seed_42 \
+#       training_run_name=monitor_informed_pen \
+#       artifact_step=100
+
+defaults:
+  - override /data: leave_out_sycophancy_full_xml
+  - override /eval: power_positions_sycophancy
+
+config_name: ""

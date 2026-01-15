@@ -1,0 +1,34 @@
+# Root Hydra configuration
+# This is the main entry point for training configurations
+#
+# Usage:
+#   python -m src.train                                    # Uses defaults
+#   python -m src.train experiment=full_xml_tags/train     # With experiment
+#   python -m src.train +reward/overseer=standard          # Add overseer
+#   python -m src.train -m +reward/overseer=standard \
+#       reward.funcs.api_overseer_penalty_func.penalty_weight=-0.01,-0.05,-0.1  # Sweep
+
+defaults:
+  - train: grpo
+  - data: leave_out_sycophancy_full_xml
+  - model: qwen3_4b
+  - lora: default
+  - reward: base
+  - wandb: default
+  - optional experiment: null
+  - _self_
+
+# Config name for wandb tracking
+# Can be overridden by experiment configs or via CLI
+# Default uses job override dirname for uniqueness
+config_name: run
+
+# Hydra configuration
+hydra:
+  run:
+    dir: outputs/${config_name}/${now:%Y-%m-%d_%H-%M-%S}
+  sweep:
+    dir: outputs/sweeps/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${hydra.job.override_dirname}
+  job:
+    chdir: false  # Don't change working directory

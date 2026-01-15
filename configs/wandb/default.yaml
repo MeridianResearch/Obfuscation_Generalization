@@ -1,0 +1,19 @@
+# Weights & Biases configuration
+
+project: obfuscation_generalization
+entity: geodesic
+
+# Maps CLI override keys to short names for run_name construction.
+# When a parameter is overridden via CLI, its short name and value appear in run_name.
+# Format: run_${short_name_1}_${value_1}_${short_name_2}_${value_2}...
+# Example: reward.funcs.api_overseer_penalty_func.penalty_weight=-0.1 -> run_penalty_-0.1
+run_name_mapping:
+  "reward.funcs.api_overseer_penalty_func.penalty_weight": "pen"
+  "train.learning_rate": "lr"
+  "train.num_train_epochs": "epochs"
+  "train.per_device_train_batch_size": "batch"
+  "lora.r": "lora_r"
+  "reward/overseer": "ovs"
+  "data": "data"
+  "train.seed": "ts"
+  "training_group": "tg"

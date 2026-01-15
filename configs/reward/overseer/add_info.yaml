@@ -1,0 +1,17 @@
+# @package reward.funcs
+# API overseer penalty with additional_info_pen system prompts
+# This config is optionally composed via: +reward/overseer=add_info
+
+api_overseer_penalty_func:
+  model_name: "accounts/fireworks/models/qwen3-235b-a22b-instruct-2507"
+  penalty_weight: -0.01  # Sweepable parameter
+  max_tokens: 5
+  prompt_format: 'binary_decision'
+  condition_on_correctness: true
+  
+  # $$ is file path after configs/monitor_system_prompts/
+  system_prompt_per_dataset:
+    revealing_score: $$additional_info_pen/revealing_score_modified
+    code_selection: $$additional_info_pen/code_selection_modified
+    sycophancy_fact: $$additional_info_pen/sycophancy_fact_modified
+    mmlu_subset_1000: null

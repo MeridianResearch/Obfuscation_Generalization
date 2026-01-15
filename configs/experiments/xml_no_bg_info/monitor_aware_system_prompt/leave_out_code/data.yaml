@@ -1,0 +1,67 @@
+# Dataset config: leave_out_code
+#
+# Train: sycophancy_fact (400), revealing_score (600), mmlu (500)
+# Eval: code_selection with two formatting variants
+#
+# Usage:
+#   python -m data_processing.run_pipeline configs/experiments/xml_no_bg_info/monitor_aware_system_prompt/leave_out_code/data.yaml --hf_account_name your_account
+
+result_name: leave_out_code_xml_no_bg_info
+seed: 42
+
+# =============================================================================
+# Training datasets (from datasets/reward_hack/train_superset)
+# Combined into 'train' fold
+# =============================================================================
+train_datasets:
+  # Sycophancy with XML formatting (no background info)
+  - dataset_name: sycophancy_fact
+    count: 400
+    function:
+      - confirm_correct_answer: {}
+      - xml_format_sycophancy_fact:
+          correctness_info_text: false
+          correctness_info_tag: false
+          question_tag: "question"
+          reward_hacking_info_tag: "additional_info"
+
+  # Revealing score with XML formatting (no background info)
+  # Using adversarial filter (high_reward != correct)
+  - dataset_name: revealing_score
+    count: 600
+    function:
+      - confirm_correct_answer: {}
+      - revealing_score_adversarial: {}
+      - xml_format_revealing_score:
+          correctness_info_text: false
+          correctness_info_tag: false
+          question_tag: "question"
+          reward_hacking_info_tag: "additional_info"
+
+  # MMLU - no transformation needed (clean baseline)
+  - dataset_name: mmlu_subset_1000
+    count: 500
+    function: []
+
+# =============================================================================
+# Eval datasets (from datasets/reward_hack/eval_set)
+# Each becomes its own 'eval_{fold_name}' fold
+# Uses ALL rows (no count parameter)
+# =============================================================================
+eval_datasets:
+  # Code selection with XML formatting (same style as training)
+  - dataset_name: code_selection
+    fold_name: code_formatted
+    function:
+      - confirm_correct_answer: {}
+      - xml_format_code_selection:
+          correctness_info_text: false
+          correctness_info_tag: false
+          question_tag: "question"
+          reward_hacking_info_tag: "additional_info"
+
+  # Code selection without special formatting (raw)
+  - dataset_name: code_selection
+    fold_name: code_raw
+    function: 
+      - confirm_correct_answer: {}

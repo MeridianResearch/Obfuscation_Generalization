@@ -1,0 +1,20 @@
+# @package _global_
+# Sweep configuration for penalty_weight parameter
+#
+# Usage:
+#   python -m src.train -m --config-name=sweep/penalty_weight \
+#       experiment=full_xml_tags/train
+#
+# This sets up a sweep over penalty_weight values with the standard overseer
+
+defaults:
+  - /reward/overseer: standard
+
+# Override config_name to include penalty weight
+# Note: Set experiment= to get a meaningful name, otherwise uses 'sweep'
+config_name: sweep_pen_${reward.funcs.api_overseer_penalty_func.penalty_weight}
+
+hydra:
+  sweeper:
+    params:
+      reward.funcs.api_overseer_penalty_func.penalty_weight: -0.01,-0.05,-0.1,-0.2

@@ -1,0 +1,14 @@
+# @package _global_
+# Experiment: Evaluate on sycophancy_fact with xml_no_bg_info
+#
+# Usage:
+#   python -m src.eval experiment=xml_no_bg_info/eval_sycophancy \
+#       training_group=leave_out_sycophancy_xml_no_bg_info_seed_42 \
+#       training_run_name=monitor_informed_pen \
+#       artifact_step=100
+
+defaults:
+  - override /data: leave_out_sycophancy_no_bg
+  - override /eval: sycophancy
+
+config_name: sycophancy_eval_formatted
