@@ -4,4 +4,4 @@ base_model_id: Qwen/Qwen3-14B
 
 # Eval-specific settings (used by eval.py)
 tensor_parallel_size: 1
-vllm_gpu_memory_utilization: 0.7
+vllm_gpu_memory_utilization: 0.9
