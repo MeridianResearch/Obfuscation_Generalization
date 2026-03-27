@@ -13,11 +13,11 @@ fp16: true
 bf16: false
 save_steps: 200
 logging_steps: 1
-max_completion_length: 1536
+max_completion_length: 1024
 
 num_generations: 2
-generation_batch_size: 2
+generation_batch_size: 1
 per_device_train_batch_size: 1
-gradient_accumulation_steps: 8
+gradient_accumulation_steps: 4
 seed: 50
 data_seed: ${train.seed}
