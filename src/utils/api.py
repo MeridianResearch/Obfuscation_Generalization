@@ -29,6 +29,7 @@ KimiConfig = APIModelConfig(
 API_CONIGS = {
     "Qwen/Qwen3-235B-A22B-Instruct-2507-tput": QwenConfig,
     "moonshotai/Kimi-K2-Instruct-0905": KimiConfig,
+    "moonshotai/Kimi-K2.5": KimiConfig,
 }
 
 
