@@ -3,7 +3,7 @@
 use_vllm: true
 vllm_mode: colocate
 vllm_enable_sleep_mode: true
-vllm_tensor_parallel_size: 1
+vllm_tensor_parallel_size: 2
 output_dir: GRPO
 learning_rate: 5e-5
 max_prompt_length: 512
@@ -13,11 +13,11 @@ fp16: true
 bf16: false
 save_steps: 200
 logging_steps: 1
-max_completion_length: 1024
+max_completion_length: 1536
 
-num_generations: 1
-generation_batch_size: 1
-per_device_train_batch_size: 1
-gradient_accumulation_steps: 4
+num_generations: 8
+generation_batch_size: 8
+per_device_train_batch_size: 4
+gradient_accumulation_steps: 2
 seed: 50
 data_seed: ${train.seed}
