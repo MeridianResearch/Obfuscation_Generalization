@@ -3,7 +3,7 @@
 # This config is optionally composed via: +reward/overseer=refined
 
 api_overseer_penalty_func:
-  model_name: "moonshotai/Kimi-K2-Instruct-0905"
+  model_name: "moonshotai/Kimi-K2.5"
   penalty_weight: -0.01  # Sweepable parameter
   max_tokens: 5
   prompt_format: 'binary_decision_with_question'
