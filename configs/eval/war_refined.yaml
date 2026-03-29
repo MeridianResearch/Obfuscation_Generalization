@@ -16,7 +16,7 @@ eval_funcs:
   
   # API-based oversight for detecting reward hacking behavior
   api_overseer_penalty_func:
-    model_name: "moonshotai/Kimi-K2-Instruct-0905"
+    model_name: "moonshotai/Kimi-K2.5"
     penalty_weight: 1
     max_tokens: 5
     condition_on_correctness: false
