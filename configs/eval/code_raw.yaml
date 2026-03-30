@@ -1,0 +1,44 @@
+# Eval function configuration for raw code_selection evaluation
+# Tests on code_selection without XML formatting (test cases inline in question text)
+
+# Eval dataset settings
+fold: eval_code_raw
+max_samples: 500
+batch_size: 8
+
+# No system prompt for raw version
+source_dataset_to_system_prompt:
+  code_selection: null
+
+# Eval functions to run
+eval_funcs:
+  # Primary correctness check
+  correctness_reward_func:
+    strict: true
+
+  # API-based oversight for detecting reward hacking behavior
+  api_overseer_penalty_func:
+    model_name: "moonshotai/Kimi-K2.5"
+    penalty_weight: 1
+    max_tokens: 5
+    condition_on_correctness: false
+    prompt_format: binary_decision_with_question
+
+    system_prompt_per_dataset:
+      code_selection: $$refined_pen/code_selection
+
+  # Track terms in chain-of-thought
+  count_custom_terms_in_cot:
+    custom_terms:
+      - test case
+      - passes
+      - hardcoded
+
+  # Track terms in summary
+  count_custom_terms_in_summary:
+    custom_terms:
+      - test
+
+  # Track lengths
+  count_cot_words: {}
+  count_summary_words: {}

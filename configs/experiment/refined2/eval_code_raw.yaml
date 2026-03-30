@@ -1,0 +1,14 @@
+# @package _global_
+# Experiment: Evaluate on code_selection raw (no XML formatting)
+#
+# Usage:
+#   python -m src.eval experiment=refined2/eval_code_raw \
+#       training_group=leave_out_code_refined2_seed_50 \
+#       training_run_name=<run_name> \
+#       artifact_step=<step>
+
+defaults:
+  - override /data: leave_out_code_refined2
+  - override /eval: code_raw
+
+config_name: code_raw_eval

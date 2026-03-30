@@ -81,8 +81,9 @@ eval_datasets:
   # Code selection without special formatting (raw)
   - dataset_name: revealing_score
     fold_name: revealing_score_raw
-    function: 
+    function:
       - confirm_correct_answer: {}
+      - revealing_score_adversarial: {}
 
   - dataset_name: medical_sycophancy_fact
     fold_name: medical_sycophancy_fact_formatted

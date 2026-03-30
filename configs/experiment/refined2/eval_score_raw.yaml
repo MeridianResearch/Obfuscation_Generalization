@@ -1,0 +1,14 @@
+# @package _global_
+# Experiment: Evaluate on revealing_score raw (no XML formatting)
+#
+# Usage:
+#   python -m src.eval experiment=refined2/eval_score_raw \
+#       training_group=leave_out_score_refined2_seed_50 \
+#       training_run_name=<run_name> \
+#       artifact_step=<step>
+
+defaults:
+  - override /data: leave_out_score_refined2
+  - override /eval: score_raw
+
+config_name: score_raw_eval
