@@ -23,7 +23,7 @@ KimiConfig = APIModelConfig(
     end_system="<|im_end|>",
     start_user="<|im_user|>user<|im_middle|>",
     end_user="<|im_end|>",
-    start_assistant="<|im_assistant|>assistant<|im_middle|>",
+    start_assistant="<|im_assistant|>assistant<|im_middle|><think></think>",
 )
 
 API_CONIGS = {
