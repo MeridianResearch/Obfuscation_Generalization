@@ -360,6 +360,13 @@ def create_api_overseer_penalty_func(config: Dict[str, Any]) -> Callable:
                 else:
                     raise ValueError(f"Unexpected overseer response: '{decision_text}'")
 
+            except ValueError as e:
+                # Non-transient parsing error — don't retry, penalize conservatively
+                print(
+                    f"WARNING: Overseer response parsing failed, defaulting to penalty. Error: {e}"
+                )
+                return (penalty_weight, f"PARSE_ERROR: {e}")
+
             except Exception as e:
                 if attempt < max_attempts - 1:
                     print(
@@ -367,12 +374,13 @@ def create_api_overseer_penalty_func(config: Dict[str, Any]) -> Callable:
                     )
                     await asyncio.sleep(delay_seconds)
                 else:
-                    # Final attempt failed - raise for real
-                    raise RuntimeError(
-                        f"API call failed permanently after {max_attempts} attempts "
+                    # Final attempt failed — default to penalty instead of crashing
+                    print(
+                        f"WARNING: API call failed permanently after {max_attempts} attempts "
                         f"(waited {max_attempts * delay_seconds // 60} minutes total). "
-                        f"Last error: {e}"
-                    ) from e
+                        f"Last error: {e}. Defaulting to penalty."
+                    )
+                    return (penalty_weight, f"API_ERROR: {e}")
 
     # Store decision texts for this batch (will be populated by the async function)
     decision_texts_storage: List[str] = []
