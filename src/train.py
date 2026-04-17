@@ -43,7 +43,7 @@ from src.utils.wandb_logging import (
     build_run_name_from_overrides,
 )
 from src.utils.callbacks import CheckpointCallback, TrackingCallback
-from src.utils.resume import parse_resume_arg, prepare_resume, ResumeInfo
+from src.utils.resume import parse_resume_arg, parse_resume_run_id_arg, prepare_resume, ResumeInfo
 
 
 # Global tracking data
@@ -248,7 +248,11 @@ class ResumableGRPOTrainer(GRPOTrainer):
             print(f"Initialized trainer._step to {self._step}")
 
 
-def run_training(cfg: Union[Dict, DictConfig], resume_checkpoint: Optional[str] = None) -> None:
+def run_training(
+    cfg: Union[Dict, DictConfig],
+    resume_checkpoint: Optional[str] = None,
+    resume_run_id: Optional[str] = None,
+) -> None:
     """Main training entry point with synchronous W&B uploading and robust cleanup."""
     config_name = cfg.config_name
     if not config_name:
@@ -282,6 +286,7 @@ def run_training(cfg: Union[Dict, DictConfig], resume_checkpoint: Optional[str] 
             run_name=run_name,
             current_config=cfg,
             verify_config=True,
+            resume_run_id=resume_run_id,
         )
 
     # Absolute path ensures no confusion between local ranks
@@ -296,7 +301,7 @@ def run_training(cfg: Union[Dict, DictConfig], resume_checkpoint: Optional[str] 
             if resume_info is not None:
                 wandb_config.update(resume_info.to_wandb_config())
             
-            wandb.init(
+            wandb_init_kwargs = dict(
                 entity=wandb_cfg.get("entity"),
                 project=wandb_cfg.get("project"),
                 group=wandb_group,
@@ -305,6 +310,11 @@ def run_training(cfg: Union[Dict, DictConfig], resume_checkpoint: Optional[str] 
                 resume="allow",  # Allows step continuation
                 reinit=True,
             )
+            # When resuming, pin to the previous run's id so wandb continues that
+            # run instead of creating a new one. resume="allow" is a no-op without id.
+            if resume_info is not None:
+                wandb_init_kwargs["id"] = resume_info.resume_run_id
+            wandb.init(**wandb_init_kwargs)
             
             # Set up step continuation for resumed runs
             if resume_info is not None:
@@ -398,9 +408,10 @@ def run_training(cfg: Union[Dict, DictConfig], resume_checkpoint: Optional[str] 
                     shutil.rmtree(resume_info.checkpoint_path, ignore_errors=True)
 
 
-# Parse --resume_checkpoint BEFORE hydra.main processes sys.argv
-# This must happen at module load time
+# Parse --resume_checkpoint / --resume_run_id BEFORE hydra.main processes sys.argv.
+# This must happen at module load time.
 _resume_checkpoint = parse_resume_arg()
+_resume_run_id = parse_resume_run_id_arg()
 
 
 @hydra.main(version_base=None, config_path="../configs", config_name="config")
@@ -410,7 +421,7 @@ def main(cfg: DictConfig) -> None:
     dotenv.load_dotenv()
 
     # Run training
-    run_training(cfg, resume_checkpoint=_resume_checkpoint)
+    run_training(cfg, resume_checkpoint=_resume_checkpoint, resume_run_id=_resume_run_id)
     print("✓ Training complete.")
 
 

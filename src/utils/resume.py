@@ -14,32 +14,37 @@ import wandb
 from omegaconf import DictConfig, OmegaConf
 
 
-def parse_resume_arg() -> Optional[str]:
-    """
-    Parse --resume_checkpoint from sys.argv before Hydra processes args.
-    
-    Returns:
-        The checkpoint specifier ('latest', step number as string, or None)
-    """
-    resume_value = None
-    indices_to_remove = []
-    
+def _parse_flag(flag: str) -> Optional[str]:
+    """Pop `--flag VALUE` or `--flag=VALUE` from sys.argv and return VALUE."""
+    value = None
+    indices_to_remove: list[int] = []
     for i, arg in enumerate(sys.argv):
-        if arg == '--resume_checkpoint':
+        if arg == flag:
             if i + 1 < len(sys.argv):
-                resume_value = sys.argv[i + 1]
+                value = sys.argv[i + 1]
                 indices_to_remove = [i, i + 1]
                 break
-        elif arg.startswith('--resume_checkpoint='):
-            resume_value = arg.split('=', 1)[1]
+        elif arg.startswith(f"{flag}="):
+            value = arg.split('=', 1)[1]
             indices_to_remove = [i]
             break
-    
-    # Remove from sys.argv so Hydra doesn't see unknown args
     for idx in sorted(indices_to_remove, reverse=True):
         sys.argv.pop(idx)
-    
-    return resume_value
+    return value
+
+
+def parse_resume_arg() -> Optional[str]:
+    """Parse --resume_checkpoint from sys.argv before Hydra processes args."""
+    return _parse_flag('--resume_checkpoint')
+
+
+def parse_resume_run_id_arg() -> Optional[str]:
+    """Parse --resume_run_id from sys.argv before Hydra processes args.
+
+    Use this to pin a specific W&B run id when multiple runs share the same
+    displayName (e.g. an orphaned run from a failed resume attempt).
+    """
+    return _parse_flag('--resume_run_id')
 
 
 def find_wandb_run(
@@ -255,25 +260,34 @@ def prepare_resume(
     run_name: str,
     current_config: Union[Dict, DictConfig],
     verify_config: bool = True,
+    resume_run_id: Optional[str] = None,
 ) -> ResumeInfo:
     """
     Prepare for resuming training from a wandb checkpoint.
-    
+
+    If `resume_run_id` is provided, that specific W&B run is used directly
+    (bypassing the displayName lookup). This is the escape hatch when multiple
+    runs share a displayName (e.g. an orphan from a previously-failed resume).
+
     Raises:
         ValueError: If no matching run/checkpoint found or config mismatch
     """
     print(f"\n{'='*60}")
     print(f"RESUME: Preparing to resume from checkpoint '{resume_checkpoint}'")
     print(f"{'='*60}")
-    
+
     # Find previous run
-    prev_run = find_wandb_run(entity, project, group, run_name)
-    if prev_run is None:
-        raise ValueError(
-            f"No previous run found with name '{run_name}' in group '{group}' "
-            f"(project: {entity}/{project})"
-        )
-    print(f"Found previous run: {prev_run.id} ({prev_run.name})")
+    if resume_run_id is not None:
+        prev_run = wandb.Api().run(f"{entity}/{project}/{resume_run_id}")
+        print(f"Using pinned run id: {prev_run.id} ({prev_run.name})")
+    else:
+        prev_run = find_wandb_run(entity, project, group, run_name)
+        if prev_run is None:
+            raise ValueError(
+                f"No previous run found with name '{run_name}' in group '{group}' "
+                f"(project: {entity}/{project})"
+            )
+        print(f"Found previous run: {prev_run.id} ({prev_run.name})")
     
     # Verify config
     if verify_config:
