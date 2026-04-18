@@ -44,11 +44,15 @@ class VLLMModelEvaluator:
             if self.tokenizer.pad_token is None:
                 self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        # Initialize vLLM
+        # Initialize vLLM.
+        # Cap max_num_seqs and max_model_len to avoid sampler-warmup OOM — the
+        # 1024 × full-context-length pre-alloc can blow up KV-cache even on H100.
         self.llm = LLM(
             model=self.model_path,
             tensor_parallel_size=self.tensor_parallel_size,
             gpu_memory_utilization=self.gpu_memory_utilization,
+            max_num_seqs=256,
+            max_model_len=8192,
             trust_remote_code=True,
             dtype="float16",
         )
