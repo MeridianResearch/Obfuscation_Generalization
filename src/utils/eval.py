@@ -64,13 +64,20 @@ class VLLMModelEvaluator:
         )
 
     def _merge_peft_model(self, checkpoint_path: str, output_path: str) -> str:
-        """Merge PEFT adapter with base model."""
-        print(f"Merging PEFT model from {checkpoint_path}")
+        """Merge PEFT adapter with base model.
+
+        Performs the merge entirely on CPU so that no GPU memory is reserved
+        before vLLM initializes — accelerate's `device_map="auto"` used to
+        grab 90% of device memory during merge, which conflicted with vLLM's
+        own allocator at init time and caused sampler-warmup OOMs.
+        """
+        print(f"Merging PEFT model from {checkpoint_path} (CPU)")
 
         base_model = AutoModelForCausalLM.from_pretrained(
             self.base_model_id,
-            torch_dtype=torch.float16,
-            device_map="auto",
+            dtype=torch.float16,
+            device_map="cpu",
+            low_cpu_mem_usage=True,
         )
 
         model = PeftModel.from_pretrained(base_model, checkpoint_path)
