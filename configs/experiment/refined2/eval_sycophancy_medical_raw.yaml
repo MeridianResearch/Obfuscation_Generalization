@@ -1,0 +1,11 @@
+# @package _global_
+# Experiment: Evaluate on medical_sycophancy_fact raw (no XML formatting)
+# OOD eval — the `data` override just points to a leave-out config so the
+# training-group naming lines up; the actual eval fold comes from the eval
+# section which loads the medical_sycophancy_fact_raw split.
+
+defaults:
+  - override /data: leave_out_sycophancy_refined2
+  - override /eval: medical_sycophancy_fact_raw
+
+config_name: medical_sycophancy_raw_eval

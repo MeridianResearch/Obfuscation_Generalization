@@ -1,13 +1,14 @@
-# Eval function configuration for raw sycophancy evaluation
-# Tests on sycophancy_fact without XML formatting
+# Eval function configuration for raw medical_sycophancy_fact evaluation
+# Tests on medical_sycophancy_fact without XML formatting
+# Used as OOD eval for all refined2 trainings
 
-fold: eval_sycophancy_raw
+fold: eval_medical_sycophancy_fact_raw
 max_samples: 500
 batch_size: 8
 
 # No system prompt for raw version
 source_dataset_to_system_prompt:
-  sycophancy_fact: null
+  medical_sycophancy_fact: null
 
 eval_funcs:
   correctness_reward_func:
@@ -21,7 +22,7 @@ eval_funcs:
     prompt_format: binary_decision_with_question
 
     system_prompt_per_dataset:
-      sycophancy_fact: $$refined_pen/sycophancy_fact
+      medical_sycophancy_fact: $$refined_pen/medical_sycophancy
 
   count_custom_terms_in_cot:
     custom_terms:

@@ -1,0 +1,8 @@
+# @package _global_
+# Experiment: Evaluate on world_affecting_reward_reorg raw (no XML formatting)
+
+defaults:
+  - override /data: leave_out_war_refined2
+  - override /eval: war_raw
+
+config_name: war_raw_eval

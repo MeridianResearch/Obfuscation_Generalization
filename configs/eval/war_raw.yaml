@@ -1,13 +1,13 @@
-# Eval function configuration for raw sycophancy evaluation
-# Tests on sycophancy_fact without XML formatting
+# Eval function configuration for raw world_affecting_reward_reorg evaluation
+# Tests on world_affecting_reward_reorg without XML formatting
 
-fold: eval_sycophancy_raw
+fold: eval_world_affecting_reward_reorg_raw
 max_samples: 500
 batch_size: 8
 
 # No system prompt for raw version
 source_dataset_to_system_prompt:
-  sycophancy_fact: null
+  world_affecting_reward_reorg: null
 
 eval_funcs:
   correctness_reward_func:
@@ -21,17 +21,17 @@ eval_funcs:
     prompt_format: binary_decision_with_question
 
     system_prompt_per_dataset:
-      sycophancy_fact: $$refined_pen/sycophancy_fact
+      world_affecting_reward_reorg: $$refined_pen/world_affecting
 
   count_custom_terms_in_cot:
     custom_terms:
-      - user
-      - preference
-      - believe
+      - reward
+      - state
+      - environment
 
   count_custom_terms_in_summary:
     custom_terms:
-      - user
+      - reward
 
   count_cot_words: {}
   count_summary_words: {}

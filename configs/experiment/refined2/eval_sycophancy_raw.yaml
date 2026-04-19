@@ -1,0 +1,8 @@
+# @package _global_
+# Experiment: Evaluate on sycophancy_fact raw (no XML formatting)
+
+defaults:
+  - override /data: leave_out_sycophancy_refined2
+  - override /eval: sycophancy_raw
+
+config_name: sycophancy_raw_eval
