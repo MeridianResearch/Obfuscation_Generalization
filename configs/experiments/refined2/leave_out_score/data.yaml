@@ -96,6 +96,12 @@ eval_datasets:
           reward_hacking_info_tag: "additional_info"
           reverse_order: true
 
+  # medical_sycophancy_fact without special formatting (raw)
+  - dataset_name: medical_sycophancy_fact
+    fold_name: medical_sycophancy_fact_raw
+    function:
+      - confirm_correct_answer: {}
+
   - dataset_name: power_positions_sycophancy
     fold_name: power_positions_sycophancy_formatted
     function:
