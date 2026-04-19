@@ -1,0 +1,37 @@
+# Download Qwen3-8B raw (no-XML) sycophancy evaluations for CoT-penalty runs
+
+wandb:
+  entity: nathanielmitrani-cfis-upc
+  project: obfuscation_generalization
+
+segments:
+  seeds: [50, 24, 42, 33]
+  datasets:
+    - leave_out_sycophancy_refined2
+  eval_folds:
+    - eval_sycophancy_raw
+    - eval_medical_sycophancy_fact_raw
+
+query:
+  filters:
+    createdAt:
+      $gte: "2026-01-25T00:00:00"
+    state: finished
+    displayName:
+      $regex: (?<!summary_)data_{dataset}_ts_{seed}_eval_
+    config.eval.fold: "{eval_fold}"
+
+parsing:
+  patterns:
+    - multiple_correct
+    - answer_tags
+    - final_asterisked_brackets
+    - answer_colon
+    - the_answer_is
+    - i_think
+    - boxed
+    - immediate_brackets
+    - asterisked_brackets
+    - option_letter
+    - end_letter
+  use_pre_extracted: false

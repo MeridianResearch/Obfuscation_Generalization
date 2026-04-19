@@ -73,7 +73,7 @@ SEED_COLORS = {
 
 COMBINED_FIGURES = {
     "figure1": {
-        "name": "figure1",
+        "name": "figure1_8b",
         "skip_threshold": 0.3,
         "show_summary": False,
         "columns": [
@@ -82,13 +82,13 @@ COMBINED_FIGURES = {
                 "top": {
                     "chance_level": 0.5,
                     "config": "sycophancy",
-                    "seed": 24,
+                    "seed": 42,
                     "eval_fold": "eval_sycophancy_formatted",
                 },
                 "bottom": {
                     "chance_level": 0.5,
                     "config": "sycophancy",
-                    "seed": 24,
+                    "seed": 42,
                     "eval_fold": "eval_medical_sycophancy_fact_formatted",
                 },
             },
@@ -97,13 +97,13 @@ COMBINED_FIGURES = {
                 "top": {
                     "chance_level": 0.5,
                     "config": "code",
-                    "seed": 50,
+                    "seed": 33,
                     "eval_fold": "eval_code_formatted",
                 },
                 "bottom": {
                     "chance_level": 0.5,
                     "config": "code",
-                    "seed": 50,
+                    "seed": 33,
                     "eval_fold": "eval_medical_sycophancy_fact_formatted",
                 },
             },
@@ -112,13 +112,13 @@ COMBINED_FIGURES = {
                 "top": {
                     "chance_level": 0.25,
                     "config": "score",
-                    "seed": 42,
+                    "seed": 24,
                     "eval_fold": "eval_revealing_score_formatted",
                 },
                 "bottom": {
                     "chance_level": 0.5,
                     "config": "score",
-                    "seed": 42,
+                    "seed": 24,
                     "eval_fold": "eval_medical_sycophancy_fact_formatted",
                 },
             },
@@ -139,8 +139,75 @@ COMBINED_FIGURES = {
             },
         ],
     },
+    "figure1_raw": {
+        "name": "figure1_raw_8b",
+        "skip_threshold": 0.3,
+        "show_summary": False,
+        "columns": [
+            {
+                "top_title": "Leave out\nFactual sycophancy",
+                "top": {
+                    "chance_level": 0.5,
+                    "config": "sycophancy_raw",
+                    "seed": 42,
+                    "eval_fold": "eval_sycophancy_raw",
+                },
+                "bottom": {
+                    "chance_level": 0.5,
+                    "config": "sycophancy_raw",
+                    "seed": 42,
+                    "eval_fold": "eval_medical_sycophancy_fact_raw",
+                },
+            },
+            {
+                "top_title": "Leave out\nCode selection",
+                "top": {
+                    "chance_level": 0.5,
+                    "config": "code_raw",
+                    "seed": 33,
+                    "eval_fold": "eval_code_raw",
+                },
+                "bottom": {
+                    "chance_level": 0.5,
+                    "config": "code_raw",
+                    "seed": 33,
+                    "eval_fold": "eval_medical_sycophancy_fact_raw",
+                },
+            },
+            {
+                "top_title": "Leave out\nRevealed score MMLU",
+                "top": {
+                    "chance_level": 0.25,
+                    "config": "score_raw",
+                    "seed": 24,
+                    "eval_fold": "eval_revealing_score_raw",
+                },
+                "bottom": {
+                    "chance_level": 0.5,
+                    "config": "score_raw",
+                    "seed": 24,
+                    "eval_fold": "eval_medical_sycophancy_fact_raw",
+                },
+            },
+            {
+                "top_title": "Leave out\nWorld affecting reward",
+                "top": {
+                    "chance_level": 0.5,
+                    "config": "war_raw",
+                    "seed": 50,
+                    "eval_fold": "eval_world_affecting_reward_reorg_raw",
+                },
+                "bottom": {
+                    "chance_level": 0.5,
+                    "config": "war_raw",
+                    "seed": 50,
+                    "eval_fold": "eval_medical_sycophancy_fact_raw",
+                },
+            },
+        ],
+    },
     "figure2": {
-        "name": "figure2",
+        "name": "figure2_8b",
         "skip_threshold": 0.3,
         "show_summary": True,
         "columns": [
@@ -149,13 +216,13 @@ COMBINED_FIGURES = {
                 "top": {
                     "chance_level": 0.5,
                     "config": "sum_sycophancy",
-                    "seed": 24,
+                    "seed": 33,
                     "eval_fold": "eval_sycophancy_formatted",
                 },
                 "bottom": {
                     "chance_level": 0.5,
                     "config": "sum_sycophancy",
-                    "seed": 24,
+                    "seed": 33,
                     "eval_fold": "eval_medical_sycophancy_fact_formatted",
                 },
             },
@@ -164,13 +231,13 @@ COMBINED_FIGURES = {
                 "top": {
                     "chance_level": 0.5,
                     "config": "sum_code",
-                    "seed": 42,
+                    "seed": 33,
                     "eval_fold": "eval_code_formatted",
                 },
                 "bottom": {
                     "chance_level": 0.5,
                     "config": "sum_code",
-                    "seed": 42,
+                    "seed": 33,
                     "eval_fold": "eval_medical_sycophancy_fact_formatted",
                 },
             },
@@ -179,13 +246,13 @@ COMBINED_FIGURES = {
                 "top": {
                     "chance_level": 0.25,
                     "config": "sum_score",
-                    "seed": 50,
+                    "seed": 33,
                     "eval_fold": "eval_revealing_score_formatted",
                 },
                 "bottom": {
                     "chance_level": 0.5,
                     "config": "sum_score",
-                    "seed": 50,
+                    "seed": 33,
                     "eval_fold": "eval_medical_sycophancy_fact_formatted",
                 },
             },
@@ -194,13 +261,13 @@ COMBINED_FIGURES = {
                 "top": {
                     "chance_level": 0.5,
                     "config": "sum_war",
-                    "seed": 42,
+                    "seed": 24,
                     "eval_fold": "eval_world_affecting_reward_reorg_formatted",
                 },
                 "bottom": {
                     "chance_level": 0.5,
                     "config": "sum_war",
-                    "seed": 42,
+                    "seed": 24,
                     "eval_fold": "eval_medical_sycophancy_fact_formatted",
                 },
             },
@@ -211,7 +278,7 @@ COMBINED_FIGURES = {
 # Appendix figures - multi-seed grid layouts
 APPENDIX_FIGURES = {
     "appendix_figure0": {
-        "name": "appendix_figure0",
+        "name": "appendix_figure0_8b",
         "title": "No penalisation",
         "skip_threshold": 0.3,
         "show_summary": True,
@@ -279,7 +346,7 @@ APPENDIX_FIGURES = {
         ],
     },
     "appendix_figure0b": {
-        "name": "appendix_figure0b",
+        "name": "appendix_figure0b_8b",
         "title": "No penalisation - Unparsable rate",
         "skip_threshold": None,
         "show_summary": True,
@@ -340,7 +407,7 @@ APPENDIX_FIGURES = {
         ],
     },
     "appendix_figure1": {
-        "name": "appendix_figure1",
+        "name": "appendix_figure1_8b",
         "title": "CoT penalisation",
         "skip_threshold": 0.3,
         "show_summary": False,
@@ -408,7 +475,7 @@ APPENDIX_FIGURES = {
         ],
     },
     "appendix_figure1b": {
-        "name": "appendix_figure1b",
+        "name": "appendix_figure1b_8b",
         "title": "CoT penalisation - Unparsable rate",
         "skip_threshold": None,
         "show_summary": False,
@@ -469,7 +536,7 @@ APPENDIX_FIGURES = {
         ],
     },
     "appendix_figure2": {
-        "name": "appendix_figure2",
+        "name": "appendix_figure2_8b",
         "title": "Summary penalisation",
         "skip_threshold": 0.3,
         "show_summary": True,
@@ -537,7 +604,7 @@ APPENDIX_FIGURES = {
         ],
     },
     "appendix_figure2b": {
-        "name": "appendix_figure2b",
+        "name": "appendix_figure2b_8b",
         "title": "Summary penalisation - Unparsable rate",
         "skip_threshold": None,
         "show_summary": True,
@@ -602,7 +669,7 @@ APPENDIX_FIGURES = {
 # Standalone example figures (single panel each)
 EXAMPLE_FIGURES = {
     "example_sycophancy_sum_s24_main": {
-        "name": "example_sycophancy_sum_s24_main",
+        "name": "example_sycophancy_sum_s24_main_8b",
         "title": "Evaluated on unseen sycophancy dataset",
         "skip_threshold": 0.3,
         "show_summary": False,
@@ -615,7 +682,7 @@ EXAMPLE_FIGURES = {
         },
     },
     "example_sycophancy_sum_s24_appendix": {
-        "name": "example_sycophancy_sum_s24_appendix",
+        "name": "example_sycophancy_sum_s24_appendix_8b",
         "title": "Leave out factual sycophancy\nPenalisation applied to summary",
         "skip_threshold": 0.3,
         "show_summary": True,
@@ -636,7 +703,7 @@ EXAMPLE_FIGURES = {
         },
     },
     "example_score_s42": {
-        "name": "example_score_s42",
+        "name": "example_score_s42_8b",
         "title": "Leave out revealed score MMLU\nCoT penalisation",
         "skip_threshold": 0.3,
         "show_summary": False,
@@ -648,7 +715,7 @@ EXAMPLE_FIGURES = {
         },
     },
     "example_score_sum_s50_medical": {
-        "name": "example_score_sum_s50_medical",
+        "name": "example_score_sum_s50_medical_8b",
         "title": "Leave out revealed score MMLU\nEval on medical sycophancy\nPenalisation applied to summary",
         "skip_threshold": 0.3,
         "show_summary": True,
@@ -660,7 +727,7 @@ EXAMPLE_FIGURES = {
         },
     },
     "example_war_sum_s24": {
-        "name": "example_war_sum_s24",
+        "name": "example_war_sum_s24_8b",
         "title": "Leave out world affecting reward\nPenalisation applied to summary",
         "skip_threshold": 0.3,
         "show_summary": True,
